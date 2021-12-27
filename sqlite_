@@ -1,0 +1,185 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"reflect"
+	"strings"
+
+	"github.com/jmoiron/sqlx"
+	//needed for sqlite3
+	_ "github.com/mattn/go-sqlite3"
+
+	"backpocket/utils"
+)
+
+var sqlDB *sqlx.DB
+
+func sqlDBInit() {
+	utils.Init(nil)
+	sqlDB = utils.Config.SqliteDB
+}
+
+// func sqlDBInit() {
+// 	var err error
+// 	//SQL Connection for SQLITE
+// 	if sqlDB, err = sqlx.Open("sqlite3", "file:sqlite3.db?cache=shared"); err != nil {
+// 		log.Panicf("error opening database file %v \n", err)
+// 	}
+// 	if err := utils.SqlDB.Ping(); err != nil {
+// 		log.Panicf("error connecting to database %v \n", err)
+// 	}
+// 	//SQL Connection for SQLITE
+// }
+
+func sqlTableCreate(reflectType reflect.Type) (success bool) {
+	tablename := strings.ToLower(reflectType.Name())
+
+	if tablename == "" {
+		return
+	}
+
+	var sqlTypes = map[string]string{
+		"bool": "int", "float32": "float8", "float64": "float8", "int": "int", "int32": "int8", "int64": "int8",
+		"jsondate": "date", "jsontime": "time", "string": "text", "time": "timestamp", "uint": "int", "uint32": "int8", "uint64": "int8",
+	}
+
+	var sqlCreate, sqlIndex string
+	for i := 0; i < reflectType.NumField(); i++ {
+		field := reflectType.Field(i)
+		tag := field.Tag.Get("sql")
+		fieldName := strings.ToLower(field.Name)
+		fieldType := sqlTypes[strings.ToLower(field.Type.Name())]
+
+		defaultValue := ""
+		switch fieldType {
+		case "date":
+			defaultValue = "DEFAULT current_date NOT NULL"
+		case "time":
+			defaultValue = "DEFAULT current_time NOT NULL"
+		case "timestamp":
+			defaultValue = "DEFAULT current_timestamp NOT NULL"
+		case "text":
+			defaultValue = "DEFAULT '' NOT NULL"
+		case "float", "float8", "float64":
+			defaultValue = "DEFAULT 0.0 NOT NULL"
+		case "int", "int8":
+			defaultValue = "DEFAULT 0 NOT NULL"
+		}
+
+		if defaultValue != "" && fieldName != "id" {
+			sqlCreate += fmt.Sprintf("%s %s %s", fieldName, fieldType, defaultValue)
+		}
+
+		switch tag {
+		case "pk":
+			if fieldName == "id" {
+				sqlCreate += "id INTEGER PRIMARY KEY"
+			}
+		case "index", "unique index":
+			sqlIndex += fmt.Sprintf("\ncreate %s idx_"+tablename+"_%s on "+tablename+" (%s);", tag, fieldName, fieldName)
+		}
+		if sqlCreate != "" {
+			sqlCreate += ", "
+		}
+	}
+
+	if sqlCreate == "" {
+		return
+	}
+	utils.SqlDB.Exec("drop table " + tablename)
+	sqlCreate = "create table " + tablename + " (" + strings.TrimSuffix(sqlCreate, ", ") + "); "
+
+	if _, err := utils.SqlDB.Exec(sqlCreate); err != nil {
+		log.Panicf("\n error creating database table %v \n", err)
+	}
+
+	if success = true; sqlIndex == "" {
+		return
+	}
+
+	if _, err := utils.SqlDB.Exec(sqlIndex); err != nil {
+		log.Panicf("error creating table indices %v \n", err)
+	}
+
+	return
+}
+
+func sqlTableInsert(reflectType reflect.Type, reflectValue reflect.Value) (sqlQuery string, sqlParams []interface{}) {
+	tablename := strings.ToLower(reflectType.Name())
+
+	if tablename == "" {
+		return
+	}
+
+	var sqlColumns, sqlPlacers []string
+	for i := 0; i < reflectType.NumField(); i++ {
+
+		field := reflectType.Field(i)
+		fieldName := strings.ToLower(field.Name)
+
+		if fieldName == "id" {
+			continue
+		}
+
+		fieldValue := reflectValue.FieldByName(field.Name)
+		switch fieldValue.Kind() {
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			sqlParams = append(sqlParams, fieldValue.Int())
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			sqlParams = append(sqlParams, fieldValue.Uint())
+
+		case reflect.Float32, reflect.Float64:
+			sqlParams = append(sqlParams, fieldValue.Float())
+
+		default:
+			sqlParams = append(sqlParams, fieldValue.String())
+		}
+		sqlColumns = append(sqlColumns, fieldName)
+		sqlPlacers = append(sqlPlacers, "?")
+	}
+
+	sqlQuery = "insert into " + tablename + " (" + strings.Join(sqlColumns, ",") + ") values (" + strings.Join(sqlPlacers, ",") + ")"
+	return
+}
+
+func sqlTableUpdate(reflectType reflect.Type, reflectValue reflect.Value) (sqlQuery string, sqlParams []interface{}) {
+	tablename := strings.ToLower(reflectType.Name())
+
+	if tablename == "" {
+		return
+	}
+
+	var sqlColumns []string
+	for i := 0; i < reflectType.NumField(); i++ {
+
+		field := reflectType.Field(i)
+		fieldName := strings.ToLower(field.Name)
+		if fieldName == "id" {
+			continue
+		}
+
+		fieldValue := reflectValue.FieldByName(field.Name)
+		switch fieldValue.Kind() {
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			sqlParams = append(sqlParams, fieldValue.Int())
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			sqlParams = append(sqlParams, fieldValue.Uint())
+
+		case reflect.Float32, reflect.Float64:
+			sqlParams = append(sqlParams, fieldValue.Float())
+
+		default:
+			sqlParams = append(sqlParams, fieldValue.String())
+		}
+		sqlColumns = append(sqlColumns, fieldName+" = ?")
+	}
+
+	fieldValue := reflectValue.FieldByName("ID")
+	sqlParams = append(sqlParams, fieldValue.Uint())
+
+	sqlQuery = "update " + tablename + " set " + strings.Join(sqlColumns, ",") + " where id = ? "
+	return
+}

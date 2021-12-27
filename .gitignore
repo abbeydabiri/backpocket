@@ -1,0 +1,12 @@
+resources/
+sqlite3.db
+robotrader
+.DS_Store/
+*DS_Store
+logger/
+config.yaml
+uiapp
+go.mod
+vendor/
+go.sum
+backpocket_linux.elf

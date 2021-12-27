@@ -1,0 +1,15 @@
+Dockerfile
+backpocket_win.exe
+backpocket_mac.app
+backpocket_linux.elf
+
+files/
+logger/
+images/
+vendor/
+temp/
+
+.git/
+.vscode/
+.gitignore
+.config.yaml
