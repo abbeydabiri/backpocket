@@ -35,5 +35,5 @@ jobs:
         with:
           push: true
           tags: savarlite/images:backpocket-latest
-          buildArgs: REPOSITORY=savarlite/images:backpocket-latest
+          build-args: REPOSITORY=savarlite/images:backpocket-latest
           
