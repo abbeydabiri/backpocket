@@ -90,12 +90,15 @@ func wsHandlerOrderbooks(httpRes http.ResponseWriter, httpReq *http.Request) {
 		wsConnOrderbooksMutex.Unlock()
 
 		/*
-			var msg struct {
-				Action, Pair,
-				Exchange string
-			}
+
 
 			for {
+
+				var msg struct {
+					Action, Pair,
+					Exchange string
+				}
+
 				if err := wsConn.ReadJSON(&msg); err != nil {
 					return
 				}

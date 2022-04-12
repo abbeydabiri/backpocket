@@ -145,14 +145,19 @@ func wsHandlerMarkets(httpRes http.ResponseWriter, httpReq *http.Request) {
 		wsConnMarkets[wsConn] = true
 		wsConnMarketsMutex.Unlock()
 
-		var msg struct {
-			Action, Pair,
-			Exchange string
-		}
-
 		for {
+
+			var msg struct {
+				Action, Pair,
+				Exchange string
+			}
+
 			if err := wsConn.ReadJSON(&msg); err != nil {
 				return
+			}
+
+			if msg.Pair == "" {
+				continue
 			}
 
 			switch msg.Action {

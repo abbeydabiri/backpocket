@@ -1,0 +1,178 @@
+rest-api/
+    - main.go
+
+    - utils/
+    - - jwt.go
+    - - time.go
+    - - logger.go
+    - - common.go
+
+
+    - activations/
+    - - table.go
+    - - signin.go
+    - - signup.go
+    - - passwd.go
+    - - search.go
+    - - disable.go
+    
+    
+    - users/
+    - - table.go
+    - - signin.go
+    - - signup.go
+    - - passwd.go
+    - - search.go
+    - - disable.go
+
+
+    - settings/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - networks/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - exchanges/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - accounts/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+    
+    - assets/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - markets/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - orders/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - orderbooks/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - invites/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - tokens/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - wallets/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+    
+    - accounttokens/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - transactions/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - contacts/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - teams/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - followers/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - strategies/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - sms/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go
+
+
+    - smtps/
+    - - table.go
+    - - create.go
+    - - update.go
+    - - delete.go
+    - - search.go

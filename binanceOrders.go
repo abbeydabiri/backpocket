@@ -20,7 +20,7 @@ var (
 )
 
 type binanceOrderType struct {
-	OrderID, RefOrderID  int
+	OrderID, RefOrderID  uint64
 	Takeprofit, Stoploss float64
 
 	Time, TransactTime int64
@@ -50,7 +50,7 @@ func binanceAllOrders(pair string) {
 	}
 }
 
-func binanceOrderQuery(pair string, orderid int) {
+func binanceOrderQuery(pair string, orderid uint64) {
 	queryParams := fmt.Sprintf(binanceOrderQueryParams, pair, orderid)
 	respBytes := binanceRestAPI("GET", binanceRestURL+"/order?", queryParams)
 
@@ -65,7 +65,7 @@ func binanceOrderQuery(pair string, orderid int) {
 	binanceCheckError(respBytes)
 }
 
-func binanceOrderCreate(pair, side, price string, quantity, stoploss, takeprofit float64, autorepeat, reforderid int) {
+func binanceOrderCreate(pair, side, price string, quantity, stoploss, takeprofit float64, autorepeat int, reforderid uint64) {
 
 	orderParams := fmt.Sprintf(binanceOrderCreateParams, pair, side, price, quantity)
 	respBytes := binanceRestAPI("POST", binanceRestURL+"/order?", orderParams)
@@ -112,7 +112,7 @@ func binanceOrderCreate(pair, side, price string, quantity, stoploss, takeprofit
 	}
 }
 
-func binanceOrderCancel(pair string, orderid int) {
+func binanceOrderCancel(pair string, orderid uint64) {
 	orderParams := fmt.Sprintf(binanceOrderCancelParams, pair, orderid)
 	respBytes := binanceRestAPI("DELETE", binanceRestURL+"/order?", orderParams)
 

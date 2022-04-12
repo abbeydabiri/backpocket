@@ -22,7 +22,7 @@ var (
 )
 
 type crex24OrderType struct {
-	ID int
+	ID uint64
 
 	Instrument, Side, Type,
 	Status, TimeInForce,
@@ -56,7 +56,7 @@ func crex24AllOrders(pair string) {
 	}
 }
 
-func crex24OrderQuery(orderid int) {
+func crex24OrderQuery(orderid uint64) {
 
 	queryParams := fmt.Sprintf(crex24OrderQueryParams, orderid)
 	respBytes := crex24RestAPI("GET", "/v2/trading/orderStatus?"+queryParams, nil)
@@ -92,7 +92,7 @@ func crex24OrderQuery(orderid int) {
 
 }
 
-func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit float64, autorepeat, reforderid int) {
+func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit float64, autorepeat int, reforderid uint64) {
 
 	queryParams := fmt.Sprintf(crex24OrderCreateParams, pair, side, price, quantity)
 	respBytes := crex24RestAPI("POST", "/v2/trading/placeOrder", []byte(queryParams))
@@ -110,7 +110,7 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 		order.Stoploss = stoploss
 		order.Takeprofit = takeprofit
 		order.AutoRepeat = autorepeat
-		order.RefOrderID = reforderid
+		order.RefOrderID = uint64(reforderid)
 
 		order.Side = crex24Order.Side
 		order.OrderID = crex24Order.ID
@@ -139,7 +139,7 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 	}
 	//--> New Order being created -
 
-	prvOrder := getOrder(reforderid, "crex24")
+	prvOrder := getOrder(uint64(reforderid), "crex24")
 	newOrder := getOrder(crex24Order.ID, "crex24")
 
 	prvOrder.RefOrderID = crex24Order.ID
@@ -151,13 +151,13 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 		newOrder.RefEnabled = 1
 	}
 
-	newOrder.RefOrderID = reforderid
+	newOrder.RefOrderID = uint64(reforderid)
 
 	updateOrder(prvOrder)
 	updateOrder(newOrder)
 }
 
-func crex24OrderCancel(orderid int) {
+func crex24OrderCancel(orderid uint64) {
 	orderParams := fmt.Sprintf(crex24OrderCancelParams, orderid)
 	respBytes := crex24RestAPI("POST", "/v2/trading/cancelOrdersById", []byte(orderParams))
 

@@ -22,9 +22,8 @@ func wsHandlerOrderHistory(httpRes http.ResponseWriter, httpReq *http.Request) {
 		defer ticker.Stop()
 		defer wsConn.Close()
 
-		msg := searchOrderMsgType{}
-
 		for {
+			msg := searchOrderMsgType{}
 			select {
 			case <-ticker.C:
 				if err := wsConn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -35,6 +34,10 @@ func wsHandlerOrderHistory(httpRes http.ResponseWriter, httpReq *http.Request) {
 			default:
 				if err := wsConn.ReadJSON(&msg); err != nil {
 					return
+				}
+
+				if msg.Pair == "" {
+					continue
 				}
 
 				if err := wsConn.WriteJSON(searchOrderSQL(msg)); err != nil {
