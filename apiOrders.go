@@ -35,13 +35,13 @@ type orders struct {
 	Side string `sql:"index"`
 	Type string `sql:"index"`
 
-	OrderID int `sql:"index"`
+	OrderID uint64 `sql:"index"`
 
 	RefSide      string `sql:"index"`
 	AutoRepeat   int    `sql:"index"`
 	RefTripped   string `sql:"index"`
-	AutoRepeatID int    `sql:"index"`
-	RefOrderID   int    `sql:"index"`
+	AutoRepeatID uint64 `sql:"index"`
+	RefOrderID   uint64 `sql:"index"`
 	RefEnabled   int    `sql:"index"`
 
 	Price, Quantity,
@@ -52,7 +52,13 @@ type orders struct {
 	Updated string `sql:"index"`
 }
 
-func getOrder(orderID int, orderExchange string) (order orders) {
+type orderMsgType struct {
+	Action, Start,
+	Stop string
+	Order orders
+}
+
+func getOrder(orderID uint64, orderExchange string) (order orders) {
 	orderKey := 0
 	orderListMapMutex.RLock()
 	for mapID, orderListIndex := range orderListMap {
@@ -83,18 +89,14 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 		wsConnOrders[wsConn] = true
 		wsConnOrdersMutex.Unlock()
 
-		var msg struct {
-			Action, Start,
-			Stop string
-			Order orders
-		}
-
 		for {
+			var msg = orderMsgType{}
 			if err := wsConn.ReadJSON(&msg); err != nil {
+				log.Println("wsConn.ReadJSON: ", err)
 				return
 			}
 
-			if msg.Order.Pair == "" {
+			if reflect.DeepEqual(msg, orderMsgType{}) {
 				continue
 			}
 
@@ -149,7 +151,6 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				// TakeProfit, StopLoss
 
 				//Get particular Market.
-
 				switch msg.Order.Exchange {
 				default:
 					binanceOrderCreate(msg.Order.Pair, msg.Order.Side, fmt.Sprintf("%.8f", msg.Order.Price), msg.Order.Quantity, msg.Order.Stoploss, msg.Order.Takeprofit, msg.Order.AutoRepeat, 0)

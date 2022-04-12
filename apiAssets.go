@@ -85,13 +85,17 @@ func wsHandlerAssets(httpRes http.ResponseWriter, httpReq *http.Request) {
 		wsConnAssets[wsConn] = true
 		wsConnAssetsMutex.Unlock()
 
-		var msgReq struct {
-			Symbol, Exchange string
-		}
-
 		for {
+			var msgReq struct {
+				Symbol, Exchange string
+			}
+
 			if err := wsConn.ReadJSON(&msgReq); err != nil {
 				return
+			}
+
+			if msgReq.Symbol == "" {
+				continue
 			}
 
 			//select from sqlitedb into array of orders
@@ -109,6 +113,7 @@ func wsHandlerAssets(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 			var resListAssets []assets
 			if err := utils.SqlDB.Select(&resListAssets, sqlSearch, sqlParams...); err != nil {
+				log.Println(sqlSearch, sqlParams)
 				log.Println(err.Error())
 			}
 

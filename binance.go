@@ -207,7 +207,7 @@ type binanceExecutionReport struct {
 		CurrentExecutionType          string `json:"x,omitempty"`
 		CurrentOrderStatus            string `json:"X,omitempty"`
 		OrderRejectReason             string `json:"r,omitempty"`
-		OrderID                       int    `json:"i,omitempty"`
+		OrderID                       uint64 `json:"i,omitempty"`
 		LastExecutedQty               string `json:"l,omitempty"`
 		CummulativeFilledQty          string `json:"z,omitempty"`
 		LastExecutedPrice             string `json:"L,omitempty"`
