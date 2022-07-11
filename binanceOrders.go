@@ -159,6 +159,8 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) {
 		if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(order), reflect.ValueOf(order)); len(sqlParams) > 0 {
 			if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
 				log.Println(err.Error())
+				log.Println(sqlQuery)
+				log.Println(sqlParams)
 			}
 		}
 		ordersTableMutex.Unlock()

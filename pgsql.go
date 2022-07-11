@@ -144,6 +144,8 @@ func sqlTableCreate(reflectType reflect.Type) (success bool) {
 	return
 }
 
+var timeKind = reflect.TypeOf(time.Time{}).Kind()
+
 func sqlTableInsert(reflectType reflect.Type, reflectValue reflect.Value) (sqlQuery string, sqlParams []interface{}) {
 	tablename := strings.ToLower(reflectType.Name())
 
@@ -179,7 +181,12 @@ func sqlTableInsert(reflectType reflect.Type, reflectValue reflect.Value) (sqlQu
 
 		default:
 			if fieldName == "created" || fieldName == "updated" {
-				sqlParams = append(sqlParams, utils.GetSystemTime())
+				timeValue := fieldValue.Interface().(time.Time)
+				if timeValue.IsZero() {
+					sqlParams = append(sqlParams, utils.GetSystemTime())
+				} else {
+					sqlParams = append(sqlParams, timeValue.Format(utils.TimeFormat))
+				}
 			} else {
 				sqlParams = append(sqlParams, fieldValue.String())
 			}

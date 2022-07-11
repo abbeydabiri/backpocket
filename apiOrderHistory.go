@@ -107,9 +107,6 @@ func searchOrderSQL(msg searchOrderMsgType) (filteredOrderList []orders) {
 
 	sqlSearch += " order by created limit 1024000"
 
-	log.Println(sqlSearch)
-	log.Println(sqlParams)
-
 	if err := utils.SqlDB.Select(&filteredOrderList, sqlSearch, sqlParams...); err != nil {
 		log.Println(err.Error())
 		log.Println(sqlSearch)
