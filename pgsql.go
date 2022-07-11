@@ -178,7 +178,7 @@ func sqlTableInsert(reflectType reflect.Type, reflectValue reflect.Value) (sqlQu
 			sqlParams = append(sqlParams, fieldValue.Float())
 
 		default:
-			if fieldName == "createdate" || fieldName == "updatedate" || fieldName == "created" || fieldName == "updated" {
+			if fieldName == "created" || fieldName == "updated" {
 				sqlParams = append(sqlParams, utils.GetSystemTime())
 			} else {
 				sqlParams = append(sqlParams, fieldValue.String())
@@ -204,7 +204,7 @@ func sqlTableUpdate(reflectType reflect.Type, reflectValue reflect.Value, mapUpd
 
 		field := reflectType.Field(i)
 		fieldName := strings.ToLower(field.Name)
-		if fieldName == "id" || fieldName == "createdate" || fieldName == "createdby" || fieldName == "ownerid" {
+		if fieldName == "id" || fieldName == "created" || fieldName == "createdby" || fieldName == "ownerid" {
 			continue
 		}
 
@@ -233,11 +233,11 @@ func sqlTableUpdate(reflectType reflect.Type, reflectValue reflect.Value, mapUpd
 			sqlParams = append(sqlParams, fieldValue.Float())
 
 		default:
-			// if fieldValue.String() == "" && fieldName != "updatedate" {
+			// if fieldValue.String() == "" && fieldName != "updated" {
 			// 	continue
 			// }
 
-			if fieldName == "updatedate" {
+			if fieldName == "updated" {
 				sqlParams = append(sqlParams, utils.GetSystemTime())
 			} else {
 				sqlParams = append(sqlParams, fieldValue.String())

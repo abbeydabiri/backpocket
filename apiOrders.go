@@ -48,8 +48,8 @@ type orders struct {
 	Total, Stoploss,
 	Takeprofit float64
 
-	Created string `sql:"index"`
-	Updated string `sql:"index"`
+	Created time.Time `sql:"index"`
+	Updated time.Time `sql:"index"`
 }
 
 type orderMsgType struct {
@@ -243,6 +243,7 @@ func updateOrderOnly(order orders) bool {
 		if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(order), reflect.ValueOf(order), updateFields); len(sqlParams) > 0 {
 			if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
 				log.Println(sqlQuery)
+				log.Println(sqlParams)
 				log.Println(err.Error())
 			}
 

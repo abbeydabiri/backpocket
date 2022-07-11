@@ -31,7 +31,7 @@ const (
 	Month      = 30 * Day
 	Year       = 12 * Month
 	LongTime   = 37 * Year
-	TimeFormat = "02/01/2006 15:04:05 WAT"
+	TimeFormat = "2006-01-02 15:04:05 WAT"
 )
 
 var magnitudes = []struct {
@@ -115,28 +115,28 @@ func DateTimeSplit(tDateTime JSONDate) (curDate, curTime string) {
 
 //GetTimeHuman ...
 func GetTimeHuman(curTime time.Time) string {
-	return curTime.Format("02/01/2006 3:04 PM")
+	return curTime.Format("2006-01-02 3:04 PM")
 }
 
 //GetTimeFormat ...
 func GetTimeFormat(curTime time.Time) string {
-	return curTime.Format("02/01/2006 15:04:05 WAT")
+	return curTime.Format("2006-01-02 15:04:05 WAT")
 }
 
 //GetSystemTime ...
 func GetSystemTime() string {
 	curTime := GetLocalTime()
-	return curTime.Format("02/01/2006 15:04:05 WAT")
+	return curTime.Format("2006-01-02 15:04:05 WAT")
 }
 
 //GetSystemDate ...
 func GetSystemDate() string {
-	return time.Now().Format("02/01/2006")
+	return time.Now().Format("2006-01-02")
 }
 
 //GetUnixString ...
 func GetUnixString(cTime string) string {
-	cFormat := "02/01/2006 15:04:05 WAT"
+	cFormat := "2006-01-02 15:04:05 WAT"
 	tTime, err := time.Parse(cFormat, cTime)
 	if err != nil {
 		return ""
@@ -154,7 +154,7 @@ func GetUnixTimestamp() string {
 func GetDifferenceInYears(cTimeCur string, cTimePast string) (years int) {
 
 	years = int(0)
-	cFormat := "02/01/2006"
+	cFormat := "2006-01-02"
 
 	if cTimeCur == "" {
 		cTimeCur = time.Now().Format(cFormat)
@@ -191,7 +191,7 @@ func GetDifferenceInYears(cTimeCur string, cTimePast string) (years int) {
 func GetDifferenceInMonths(cTimeCur string, cTimePast string) (months int) {
 
 	months = int(0)
-	cFormat := "02/01/2006"
+	cFormat := "2006-01-02"
 
 	if cTimeCur == "" {
 		cTimeCur = time.Now().Format(cFormat)
@@ -259,7 +259,7 @@ func GetDifferenceInSeconds(cTimeCur string, cTimePast string) (seconds int) {
 //GetDuration ...
 func GetDuration(cPast, cPresent string) string {
 	cLabel := "ago"
-	cFormat := "02/01/2006 15:04:05 WAT"
+	cFormat := "2006-01-02 15:04:05 WAT"
 
 	tPast, err := time.Parse(cFormat, cPast)
 	if err != nil {

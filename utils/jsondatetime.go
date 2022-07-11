@@ -64,7 +64,7 @@ func (j JSONDate) Parse(s string) (JSONDate, error) {
 //ParseSpreadsheetDate ...
 func (j JSONDate) ParseSpreadsheetDate(s string) (JSONDate, error) {
 	s = strings.Replace(s, "\"", "", -1)
-	t, err := time.Parse("02/01/2006", s)
+	t, err := time.Parse("2006/01/02", s)
 	if err != nil {
 		log.Println(err.Error())
 		return JSONDate(t), err

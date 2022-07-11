@@ -232,7 +232,7 @@ func binanceAssetStream() {
 				order.Pair = wRespOrderupdate.Data.Symbol
 				order.OrderID = wRespOrderupdate.Data.OrderID
 				order.Status = wRespOrderupdate.Data.CurrentOrderStatus
-				order.Created = fmt.Sprintf("%s", time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0))
+				order.Created = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
 
 				order.Price, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderPrice, 64)
 				order.Quantity, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderQuantity, 64)
@@ -249,8 +249,8 @@ func binanceAssetStream() {
 				ordersTableMutex.Unlock()
 			} else {
 				order.Status = wRespOrderupdate.Data.CurrentOrderStatus
-				order.Updated = fmt.Sprintf("%s", time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0))
-				if order.Created == "" {
+				order.Updated = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
+				if order.Created.IsZero() {
 					order.Created = order.Updated
 				}
 			}

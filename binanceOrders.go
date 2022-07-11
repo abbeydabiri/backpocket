@@ -143,11 +143,11 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) {
 		order.Status = binanceOrder.Status
 
 		if binanceOrder.Time != 0 {
-			order.Created = fmt.Sprintf("%s", time.Unix(binanceOrder.Time/1000, 0))
+			order.Created = time.Unix(binanceOrder.Time/1000, 0)
 		}
 
 		if binanceOrder.TransactTime != 0 {
-			order.Created = fmt.Sprintf("%s", time.Unix(binanceOrder.TransactTime/1000, 0))
+			order.Created = time.Unix(binanceOrder.TransactTime/1000, 0)
 		}
 
 		order.Price, _ = strconv.ParseFloat(binanceOrder.Price, 64)
@@ -166,11 +166,11 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) {
 	} else {
 		order.Status = binanceOrder.Status
 		if binanceOrder.Time != 0 {
-			order.Updated = fmt.Sprintf("%s", time.Unix(binanceOrder.Time/1000, 0))
+			order.Updated = time.Unix(binanceOrder.Time/1000, 0)
 		}
 
 		if binanceOrder.TransactTime != 0 {
-			order.Updated = fmt.Sprintf("%s", time.Unix(binanceOrder.TransactTime/1000, 0))
+			order.Updated = time.Unix(binanceOrder.TransactTime/1000, 0)
 		}
 	}
 

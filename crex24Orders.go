@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"time"
 )
 
 /*
@@ -85,7 +86,7 @@ func crex24OrderQuery(orderid uint64) {
 	}
 
 	newOrder.Status = crex24Order.Status
-	newOrder.Updated = crex24Order.Lastupdate
+	newOrder.Updated, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
 	updateOrder(newOrder)
 
 	crex24CheckError(respBytes)
@@ -116,7 +117,7 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 		order.OrderID = crex24Order.ID
 		order.Pair = crex24Order.Instrument
 		order.Status = crex24Order.Status
-		order.Created = crex24Order.Timestamp
+		order.Created, _ = time.Parse(utils.TimeFormat, crex24Order.Timestamp)
 
 		order.Price = crex24Order.Price
 		order.Quantity = crex24Order.Volume
@@ -169,7 +170,7 @@ func crex24OrderCancel(orderid uint64) {
 
 	cancelledOrder := getOrder(crex24Order.ID, "crex24")
 	cancelledOrder.Status = crex24Order.Status
-	cancelledOrder.Updated = crex24Order.Lastupdate
+	cancelledOrder.Updated, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
 	updateOrder(cancelledOrder)
 }
 
@@ -189,7 +190,7 @@ func crex24UpdateOrder(crex24Order crex24OrderType) {
 		order.Pair = crex24Order.Instrument
 		order.OrderID = crex24Order.ID
 		order.Status = crex24Order.Status
-		order.Created = crex24Order.Timestamp
+		order.Created, _ = time.Parse(utils.TimeFormat, crex24Order.Timestamp)
 
 		order.Price = crex24Order.Price
 		order.Quantity = crex24Order.Volume
@@ -206,7 +207,7 @@ func crex24UpdateOrder(crex24Order crex24OrderType) {
 
 	} else {
 		order.Status = crex24Order.Status
-		order.Updated = crex24Order.Lastupdate
+		order.Updated, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
 	}
 
 	updateOrderOnly(order)
