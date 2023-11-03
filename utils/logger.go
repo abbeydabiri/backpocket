@@ -25,12 +25,12 @@ func StartLogger(logPath string) {
 	filePath := fmt.Sprintf(logPath+"logger/%d/%d/%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	WriteFile(fileName, filePath, []byte(``))
 
-	// logfile, err := os.OpenFile(filePath+fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
-	// if err != nil {
-	// 	log.Fatalln("Failed to open log file", ":", err)
-	// }
+	logfile, err := os.OpenFile(filePath+fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	if err != nil {
+		log.Fatalln("Failed to open log file", ":", err)
+	}
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
-	// log.SetOutput(logfile)
+	log.SetOutput(logfile)
 
 	log.Println("::: logging started :::")
 }
