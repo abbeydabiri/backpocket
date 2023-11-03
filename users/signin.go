@@ -1,9 +1,9 @@
 package users
 
-import "github.com/gorilla/mux"
+// import "github.com/gorilla/mux"
 
-func HandleRoutes(muxrouter mux.Router) {
+// func HandleRoutes(muxrouter mux.Router) {
 
-	muxrouter.HandleFunc("/signin", signinHandler).Methods("POST")
-	muxrouter.HandleFunc("/signup", signupHandler).Methods("POST")
-}
+// 	muxrouter.HandleFunc("/signin", signinHandler).Methods("POST")
+// 	muxrouter.HandleFunc("/signup", signupHandler).Methods("POST")
+// }

@@ -1,4 +1,5 @@
 resources/
+docs/
 sqlite3.db
 robotrader
 .DS_Store/
@@ -8,3 +9,4 @@ config.yaml
 uiapp
 vendor/
 backpocket_linux.elf
+backpocket

@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/muzykantov/orderbook"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 var (
@@ -60,23 +61,23 @@ func main() {
 	muxRouter := mux.NewRouter()
 
 	wsHandlerAssetBroadcast()
-	muxRouter.HandleFunc("/ws/assets", wsHandlerAssets)
+	muxRouter.HandleFunc("/websocket/assets", wsHandlerAssets)
 
 	wsHandlerNotificationBroadcast()
-	muxRouter.HandleFunc("/ws/notifications", wsHandlerNotifications)
+	muxRouter.HandleFunc("/websocket/notifications", wsHandlerNotifications)
 
 	wsHandlerOrderBroadcast()
-	muxRouter.HandleFunc("/ws/orders", wsHandlerOrders)
-	muxRouter.HandleFunc("/ws/orderhistory", wsHandlerOrderHistory)
+	muxRouter.HandleFunc("/websocket/orders", wsHandlerOrders)
+	muxRouter.HandleFunc("/websocket/orderhistory", wsHandlerOrderHistory)
 
 	wsHandlerTradeBroadcast()
-	muxRouter.HandleFunc("/ws/trades", wsHandlerTrades)
+	muxRouter.HandleFunc("/websocket/trades", wsHandlerTrades)
 
 	wsHandlerMarketBroadcast()
-	muxRouter.HandleFunc("/ws/markets", wsHandlerMarkets)
+	muxRouter.HandleFunc("/websocket/markets", wsHandlerMarkets)
 
 	wsHandlerOrderbookBroadcast()
-	muxRouter.HandleFunc("/ws/orderbooks", wsHandlerOrderbooks)
+	muxRouter.HandleFunc("/websocket/orderbooks", wsHandlerOrderbooks)
 
 	// run our strategy process
 	go apiStrategyStopLossTakeProfit()
@@ -103,12 +104,32 @@ func main() {
 	// go crex24Market24hrTicker()
 	// go crex24MarketOHLCVStream()
 
-	spa := spaHandler{staticPath: "uiapp", indexPath: "index.html"}
-	muxRouter.PathPrefix("/").Handler(spa)
+	//####################################
+	//--old spa loader skipping
+	// spa := spaHandler{staticPath: "uiapp", indexPath: "index.html"}
+	// muxRouter.PathPrefix("/").Handler(spa)
 
-	println("listening")
+	// println("listening")
+
+	// http.Handle("/", muxRouter)
+	// go log.Println(http.ListenAndServe(utils.Config.Address, nil))
+	//####################################
+
+	// Serve the swagger json file
+	muxRouter.HandleFunc("/api/swagger.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./docs/swagger.json")
+	})
+
+	muxRouter.HandleFunc("/api/swagger.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./docs/swagger.yaml")
+	})
+
+	// Serve the Swagger UI
+	muxRouter.PathPrefix("/api/docs").Handler(httpSwagger.WrapHandler)
+
 	http.Handle("/", muxRouter)
 	go log.Println(http.ListenAndServe(utils.Config.Address, nil))
+	println("listening")
 
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
@@ -128,8 +149,20 @@ func wsHandleConnections(httpRes http.ResponseWriter, httpReq *http.Request) *we
 	// 	return nil
 	// }
 
-	wsConn, err := websocket.Upgrade(httpRes, httpReq, httpRes.Header(), 1024, 1024)
+	//use websocket.Upgrader instead of websocket.Upgrade to handle websocket connections
+
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+
+	wsConn, err := upgrader.Upgrade(httpRes, httpReq, httpRes.Header())
 	if err != nil {
+		log.Println(err)
 		http.Error(httpRes, "Could not open websocket connection", http.StatusBadRequest)
 		return nil
 	}

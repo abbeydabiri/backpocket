@@ -1,7 +1,5 @@
 package users
 
-import "github.com/gorilla/mux"
-
 type users struct {
 	ID       uint64 `sql:"index"`
 	Symbol   string `sql:"index"`
@@ -13,8 +11,8 @@ type users struct {
 	Locked   float64
 }
 
-func HandleRoutes(muxrouter mux.Router) {
+// func HandleRoutes(muxrouter mux.Router) {
 
-	muxrouter.HandleFunc("/signin", signinHandler).Methods("POST")
-	muxrouter.HandleFunc("/signup", signupHandler).Methods("POST")
-}
+// 	muxrouter.HandleFunc("/signin", signinHandler).Methods("POST")
+// 	muxrouter.HandleFunc("/signup", signupHandler).Methods("POST")
+// }

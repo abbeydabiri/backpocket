@@ -8,6 +8,7 @@ logger/
 images/
 vendor/
 temp/
+docs/
 
 .git/
 .vscode/

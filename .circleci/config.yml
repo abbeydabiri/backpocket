@@ -1,0 +1,165 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@4.1
+
+jobs:
+  build-and-test-app:
+    docker:
+      - image: cimg/go:1.20.2
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: go mod vendor && go install github.com/swaggo/swag/cmd/swag@latest && go install golang.org/x/lint/golint@latest
+      #- run:
+      #    name: Run gofmt for formatting
+      #    command: gofmt -w *.go
+      #- run:
+      #    name: Run golint for linting
+      #    command: golint models/ utils/ controllers/ testing/ .
+      #- run:
+      #    name: Run go vet analyzer
+      #    command: go vet
+      #- run:
+      #    name: Run test
+      #    command: cd testing && go test
+      - run:
+          name: Run swag init to generate swagger docs
+          command: swag init
+      - run:
+          name: Build app
+          command: go build -o app.elf
+
+      - slack/notify:
+          event: fail
+          channel: "devops-notifications"
+          template: basic_fail_1
+
+      - slack/notify:
+          event: pass
+          channel: "devops-notifications"
+          template: basic_on_hold_1
+
+  build-and-push-docker-image:
+    parameters:
+      environment:
+        type: string
+    docker:
+      - image: cimg/base:2023.03
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Docker Login
+          command: echo "$DOCKERHUB_PASSWORD" | docker login --username $DOCKERHUB_USERNAME --password-stdin
+
+      # build the application image
+      - run:
+          name: Docker Build
+          command: docker build -t $DOCKERHUB_USERNAME/images:backpocket-<<parameters.environment>> .
+
+      # deploy the image
+      - run:
+          name: Docker Deploy
+          command: docker push $DOCKERHUB_USERNAME/images:backpocket-<<parameters.environment>>
+
+      - slack/notify:
+          event: fail
+          channel: "devops-notifications"
+          template: basic_fail_1
+
+      - slack/notify:
+          event: pass
+          channel: "devops-notifications"
+          template: success_tagged_deploy_1
+
+workflows:
+  feature:
+    when:
+      not:
+        equal: [main, <<pipeline.git.branch>>]
+    jobs:
+      - build-and-test-app:
+          context:
+            - docker
+            - slack
+      - hold-deploy-to-dev:
+          type: approval
+          requires:
+            - build-and-test-app
+      - hold-deploy-to-test:
+          type: approval
+          requires:
+            - build-and-test-app
+      - build-and-push-docker-image:
+          name: deploy-to-dev
+          context:
+            - docker
+            - slack
+          requires:
+            - hold-deploy-to-dev
+          environment: dev
+      - build-and-push-docker-image:
+          name: deploy-to-test
+          context:
+            - docker
+            - slack
+          requires:
+            - hold-deploy-to-test
+          environment: test
+
+  stage:
+    when:
+      equal: [main, <<pipeline.git.branch>>]
+    jobs:
+      - build-and-test-app:
+          context:
+            - docker
+            - slack
+      - build-and-push-docker-image:
+          name: deploy-to-staging
+          context:
+            - docker
+            - slack
+          requires:
+            - build-and-test-app
+          environment: stage
+      - hold-deploy-to-dev:
+          type: approval
+          requires:
+            - build-and-test-app
+      - hold-deploy-to-test:
+          type: approval
+          requires:
+            - build-and-test-app
+      - build-and-push-docker-image:
+          name: deploy-to-dev
+          context:
+            - docker
+            - slack
+          requires:
+            - hold-deploy-to-dev
+          environment: dev
+      - build-and-push-docker-image:
+          name: deploy-to-test
+          context:
+            - docker
+            - slack
+          requires:
+            - hold-deploy-to-test
+          environment: test
+
+  prod:
+    jobs:
+      - build-and-push-docker-image:
+          name: deploy-to-prod
+          context:
+            - docker
+            - slack
+          environment: prod
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

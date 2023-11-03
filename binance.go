@@ -203,6 +203,8 @@ type binanceExecutionReport struct {
 		OrderQuantity                 string `json:"q,omitempty"`
 		OrderPrice                    string `json:"p,omitempty"`
 		StopPrice                     string `json:"P,omitempty"`
+		IcebergQuantity               string `json:"F,omitempty"`
+		OrderListID                   int    `json:"g,omitempty"`
 		OriginalClientOID             string `json:"C,omitempty"`
 		CurrentExecutionType          string `json:"x,omitempty"`
 		CurrentOrderStatus            string `json:"X,omitempty"`
@@ -211,12 +213,20 @@ type binanceExecutionReport struct {
 		LastExecutedQty               string `json:"l,omitempty"`
 		CummulativeFilledQty          string `json:"z,omitempty"`
 		LastExecutedPrice             string `json:"L,omitempty"`
+		CommissionAmount              string `json:"n,omitempty"`
+		CommissionAsset               string `json:"N,omitempty"`
+		TransactionTime               int64  `json:"T,omitempty"`
+		TradeID                       int    `json:"t,omitempty"`
+		Ignore1                       uint   `json:"I,omitempty"`
 		IsOrderOnBook                 bool   `json:"w,omitempty"`
+		IsTradeMakerSide              bool   `json:"m,omitempty"`
+		Ignore2                       bool   `json:"M,omitempty"`
 		CreationTime                  int64  `json:"O,omitempty"`
 		CummulativeQuoteTransactedQty string `json:"Z,omitempty"`
 		LastQuoteTransactedQty        string `json:"Y,omitempty"`
 		QuoteOrderQty                 string `json:"Q,omitempty"`
-		Ignore                        int    `json:"I,omitempty"`
+		WorkingTime                   int64  `json:"W,omitempty"`
+		SelfTradePrevention           string `json:"V,omitempty"`
 	} `json:"data,omitempty"`
 }
 

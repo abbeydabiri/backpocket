@@ -47,7 +47,7 @@ func binanceMarketGet() {
 		}
 
 		if err := json.Unmarshal(bodyBytes, &exchangeInfo); err != nil {
-			// log.Panic(string(bodyBytes))
+			log.Panic(string(bodyBytes))
 			log.Panic(err.Error())
 			return
 		}
@@ -169,6 +169,7 @@ func binanceMarket24hrTicker() {
 		var ticker24HRList []ticker24HrType
 		if err := json.Unmarshal(bodyBytes, &ticker24HRList); err != nil {
 			log.Println(err.Error())
+			log.Println(string(bodyBytes))
 			time.Sleep(time.Second * 15)
 			continue
 		}

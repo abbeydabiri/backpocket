@@ -130,6 +130,7 @@ func binanceAssetStream() {
 		_, wsRespBytes, _ := bwConn.ReadMessage()
 		if err := json.Unmarshal(wsRespBytes, &wsResp); err != nil {
 			log.Println("binanceAssetStream bwCon read error:", err)
+			log.Println("wsRespBytes:", string(wsRespBytes))
 			time.Sleep(time.Second * 15)
 
 			select {
@@ -220,6 +221,7 @@ func binanceAssetStream() {
 			wRespOrderupdate := binanceExecutionReport{}
 			if err := json.Unmarshal(wsRespBytes, &wRespOrderupdate); err != nil {
 				log.Println("read:", err)
+				log.Println("wsRespBytes:", string(wsRespBytes))
 				continue
 			}
 

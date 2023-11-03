@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//startLogger ...
+// startLogger ...
 func StartLogger(logPath string) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 
@@ -25,17 +25,17 @@ func StartLogger(logPath string) {
 	filePath := fmt.Sprintf(logPath+"logger/%d/%d/%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	WriteFile(fileName, filePath, []byte(``))
 
-	logfile, err := os.OpenFile(filePath+fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
-	if err != nil {
-		log.Fatalln("Failed to open log file", ":", err)
-	}
+	// logfile, err := os.OpenFile(filePath+fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	// if err != nil {
+	// 	log.Fatalln("Failed to open log file", ":", err)
+	// }
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
-	log.SetOutput(logfile)
+	// log.SetOutput(logfile)
 
 	log.Println("::: logging started :::")
 }
 
-//WriteFile ...
+// WriteFile ...
 func WriteFile(fileName, filePath string, fileBytes []byte) bool {
 	// filePath = config.Get().Path + filePath
 	_, err := os.Stat(filePath)
@@ -64,7 +64,7 @@ func WriteFile(fileName, filePath string, fileBytes []byte) bool {
 	return true
 }
 
-//ParseFloat ...
+// ParseFloat ...
 func ParseFloat(str string) (float64, error) {
 	val, err := strconv.ParseFloat(str, 64)
 	if err == nil {
