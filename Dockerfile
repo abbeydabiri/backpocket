@@ -9,6 +9,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app.elf && chmod +x app.el
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
+RUN apk update && apk add bash && apk --no-cache add tzdata
 WORKDIR /deploy
 COPY --from=golang-base /go/src/app/app.elf .
 # COPY --from=golang-base /go/src/app/*.xlsx ./

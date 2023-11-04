@@ -42,7 +42,7 @@ type wsResponseType struct {
 func main() {
 
 	// OrderBook = orderbook.NewOrderBook()
-	utils.StartLogger("")
+	utils.RotateLogs("")
 	sqlDBInit()
 
 	// crex24Keys()

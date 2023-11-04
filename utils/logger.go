@@ -10,8 +10,19 @@ import (
 	"time"
 )
 
+func RotateLogs(logPath string) {
+	startLogger(logPath)
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			startLogger(logPath)
+		}
+	}()
+}
+
 // startLogger ...
-func StartLogger(logPath string) {
+func startLogger(logPath string) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 
 	if _, err := os.Stat(logPath); err != nil {
@@ -19,9 +30,8 @@ func StartLogger(logPath string) {
 			os.MkdirAll(logPath, 0777)
 		}
 	}
-
 	// fileName := fmt.Sprintf("/%s.log", filepath.Base(os.Args[0]))
-	fileName := "/api.log"
+	fileName := fmt.Sprintf("/api.log")
 	filePath := fmt.Sprintf(logPath+"logger/%d/%d/%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	WriteFile(fileName, filePath, []byte(``))
 
@@ -31,8 +41,6 @@ func StartLogger(logPath string) {
 	}
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 	log.SetOutput(logfile)
-
-	log.Println("::: logging started :::")
 }
 
 // WriteFile ...
