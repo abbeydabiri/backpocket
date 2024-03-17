@@ -162,12 +162,12 @@ func wsHandlerOrderbookBroadcast() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Second * 5)
+		ticker := time.NewTicker(time.Second * 3)
 		defer ticker.Stop()
 		for range ticker.C {
 
 			orderbookListMutex.RLock()
-			for orderbook := range orderbookList {
+			for _, orderbook := range orderbookList {
 				wsBroadcastOrderBook <- orderbook
 			}
 			orderbookListMutex.RUnlock()
