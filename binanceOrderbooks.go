@@ -18,7 +18,7 @@ func binanceOrderBookStream() {
 	marketListMutex.RLock()
 	for _, market := range marketList {
 		if market.Status == "enabled" && market.Exchange == "binance" {
-			streamParams = append(streamParams, strings.ToLower(market.Pair)+"@depth250@5000ms")
+			streamParams = append(streamParams, strings.ToLower(market.Pair)+"@depth20@1000ms")
 		}
 	}
 	marketListMutex.RUnlock()
@@ -38,7 +38,7 @@ func binanceOrderBookStream() {
 			marketListMutex.RLock()
 			for _, market := range marketList {
 				if market.Status == "enabled" && market.Exchange == "binance" {
-					streamParams = append(streamParams, strings.ToLower(market.Pair)+"@depth250@5000ms")
+					streamParams = append(streamParams, strings.ToLower(market.Pair)+"@depth20@1000ms")
 				}
 			}
 			marketListMutex.RUnlock()
@@ -128,10 +128,10 @@ func binanceOrderBookStream() {
 		default:
 		}
 
-		select {
-		case wsBroadcastOrderBook <- orderbook:
-		default:
-		}
+		// select {
+		// case wsBroadcastOrderBook <- orderbook:
+		// default:
+		// }
 
 		select {
 		case chanStoplossTakeProfit <- orderbook:
