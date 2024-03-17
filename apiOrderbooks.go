@@ -162,7 +162,7 @@ func wsHandlerOrderbookBroadcast() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Second * 3)
+		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
 		for range ticker.C {
 
