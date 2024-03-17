@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -153,7 +154,7 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				//Get particular Market.
 				switch msg.Order.Exchange {
 				default:
-					binanceOrderCreate(msg.Order.Pair, msg.Order.Side, fmt.Sprintf("%.8f", msg.Order.Price), msg.Order.Quantity, msg.Order.Stoploss, msg.Order.Takeprofit, msg.Order.AutoRepeat, 0)
+					binanceOrderCreate(msg.Order.Pair, msg.Order.Side, strconv.FormatFloat(msg.Order.Price, 'f', -1, 64), strconv.FormatFloat(msg.Order.Quantity, 'f', -1, 64), msg.Order.Stoploss, msg.Order.Takeprofit, msg.Order.AutoRepeat, 0)
 				case "crex24":
 					crex24OrderCreate(msg.Order.Pair, msg.Order.Side, msg.Order.Price, msg.Order.Quantity, msg.Order.Stoploss, msg.Order.Takeprofit, msg.Order.AutoRepeat, 0)
 				}

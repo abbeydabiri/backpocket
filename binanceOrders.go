@@ -65,7 +65,7 @@ func binanceOrderQuery(pair string, orderid uint64) {
 	binanceCheckError(respBytes)
 }
 
-func binanceOrderCreate(pair, side, price string, quantity, stoploss, takeprofit float64, autorepeat int, reforderid uint64) {
+func binanceOrderCreate(pair, side, price, quantity string, stoploss, takeprofit float64, autorepeat int, reforderid uint64) {
 
 	orderParams := fmt.Sprintf(binanceOrderCreateParams, pair, side, price, quantity)
 	respBytes := binanceRestAPI("POST", binanceRestURL+"/order?", orderParams)
