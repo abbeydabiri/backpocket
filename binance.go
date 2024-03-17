@@ -23,7 +23,7 @@ const (
 	binanceListOrdersParams  = "symbol=%s"
 	binanceOrderQueryParams  = "symbol=%s&orderId=%d"
 	binanceOrderCancelParams = "symbol=%s&orderId=%d"
-	binanceOrderCreateParams = "type=LIMIT&timeInForce=GTC&symbol=%s&side=%s&price=%s&quantity=%f"
+	binanceOrderCreateParams = "type=LIMIT&timeInForce=GTC&symbol=%s&side=%s&price=%s&quantity=%s"
 )
 
 var (
