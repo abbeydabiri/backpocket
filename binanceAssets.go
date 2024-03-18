@@ -260,7 +260,7 @@ func binanceAssetStream() {
 
 			wsBroadcastNotification <- notifications{
 				Title:   "*Binance Exchange*",
-				Message: fmt.Sprintf("%s limit %s order [%v] for %v %s", order.Status, order.Side, order.OrderID, order.Quantity, order.Pair),
+				Message: fmt.Sprintf("%s limit %s order [%v] for %s %s", order.Status, order.Side, order.OrderID, strconv.FormatFloat(order.Quantity, 'f', -1, 64), order.Pair),
 			}
 		}
 	}
