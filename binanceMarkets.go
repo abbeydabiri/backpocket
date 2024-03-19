@@ -124,14 +124,14 @@ func binanceMarketGet() {
 							}
 						}
 					}
-
+					wsBroadcastMarket <- market
 					//save market to db
 				}
 			}
 		}
 
 		// dbSetupMarkets()
-		time.Sleep(time.Hour)
+		time.Sleep(time.Minute)
 	}
 }
 
