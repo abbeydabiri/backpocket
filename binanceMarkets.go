@@ -138,12 +138,12 @@ func binanceMarketGet() {
 func binanceMarket24hrTicker() {
 
 	for {
-		httpClient := http.Client{Timeout: time.Duration(time.Second * 5)}
+		httpClient := http.Client{Timeout: time.Duration(time.Second * 10)}
 		httpRequest, _ := http.NewRequest("GET", binanceRestURL+"/ticker/24hr", nil)
 		httpResponse, err := httpClient.Do(httpRequest)
 		if err != nil {
 			log.Println(err.Error())
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			continue
 		}
 		defer httpResponse.Body.Close()
@@ -151,7 +151,7 @@ func binanceMarket24hrTicker() {
 		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
 		if err != nil {
 			log.Println(err.Error())
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			continue
 		}
 
@@ -170,7 +170,7 @@ func binanceMarket24hrTicker() {
 		if err := json.Unmarshal(bodyBytes, &ticker24HRList); err != nil {
 			log.Println(err.Error())
 			log.Println(string(bodyBytes))
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			continue
 		}
 
