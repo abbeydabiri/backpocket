@@ -33,7 +33,7 @@ func wsHandlerOrderHistory(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 			default:
 				if err := wsConn.ReadJSON(&msg); err != nil {
-					continue
+					return
 				}
 
 				if msg.Pair == "" {

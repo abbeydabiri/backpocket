@@ -94,7 +94,7 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 			var msg = orderMsgType{}
 			if err := wsConn.ReadJSON(&msg); err != nil {
 				log.Println("wsConn.ReadJSON: ", err)
-				continue
+				return
 			}
 
 			if reflect.DeepEqual(msg, orderMsgType{}) {
