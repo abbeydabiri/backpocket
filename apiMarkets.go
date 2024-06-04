@@ -3,6 +3,7 @@ package main
 import (
 	"backpocket/utils"
 	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -153,7 +154,8 @@ func wsHandlerMarkets(httpRes http.ResponseWriter, httpReq *http.Request) {
 			}
 
 			if err := wsConn.ReadJSON(&msg); err != nil {
-				return
+				log.Println("wsConn.ReadJSON: ", err)
+				continue
 			}
 
 			if msg.Pair == "" {

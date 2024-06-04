@@ -2,6 +2,7 @@ package main
 
 import (
 	"backpocket/utils"
+	"encoding/json"
 	"log"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ func binanceOrderBookStream() {
 	if _, _, err := bwConn.ReadMessage(); err != nil {
 		log.Println("err ", err.Error())
 	}
+	log.Println("Connected binanceOrderBookStream")
 
 	//loop through and read all messages received
 	for {
@@ -48,13 +50,17 @@ func binanceOrderBookStream() {
 			if _, _, err := bwConn.ReadMessage(); err != nil {
 				log.Println("err ", err.Error())
 			}
+			log.Println("Restarted binanceOrderBookStream")
 
 		default:
 		}
 
-		if err := bwConn.ReadJSON(&wsResp); err != nil {
+		_, wsRespBytes, _ := bwConn.ReadMessage()
+		if err := json.Unmarshal(wsRespBytes, &wsResp); err != nil {
+			// if err := bwConn.ReadJSON(&wsResp); err != nil {
 			log.Println("binanceOrderBookStream bwCon read error:", err)
-			time.Sleep(time.Second * 15)
+			log.Println("wsRespBytes:", string(wsRespBytes))
+			time.Sleep(time.Second * 10)
 
 			select {
 			case chanRestartBinanceOrderBookStream <- true:

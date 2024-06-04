@@ -10,3 +10,4 @@ uiapp
 vendor/
 backpocket_linux.elf
 backpocket
+app.elf

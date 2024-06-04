@@ -28,12 +28,12 @@ func wsHandlerOrderHistory(httpRes http.ResponseWriter, httpReq *http.Request) {
 			case <-ticker.C:
 				if err := wsConn.WriteMessage(websocket.PingMessage, nil); err != nil {
 					println("websocket.PingMessage: ", err.Error())
-					return
+					continue
 				}
 
 			default:
 				if err := wsConn.ReadJSON(&msg); err != nil {
-					return
+					continue
 				}
 
 				if msg.Pair == "" {
@@ -42,7 +42,7 @@ func wsHandlerOrderHistory(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 				if err := wsConn.WriteJSON(searchOrderSQL(msg)); err != nil {
 					log.Println(err.Error())
-					return
+					continue
 				}
 				//check if msg pair is valid and we can create a new set of orders for it
 				//
