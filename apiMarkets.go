@@ -155,7 +155,7 @@ func wsHandlerMarkets(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 			if err := wsConn.ReadJSON(&msg); err != nil {
 				log.Println("wsConn.ReadJSON: ", err)
-				continue
+				return
 			}
 
 			if msg.Pair == "" {
