@@ -274,9 +274,12 @@ func binanceMarketOHLCVStream() {
 		default:
 		}
 
-		if err := bwConn.ReadJSON(&wsResp); err != nil {
+		_, wsRespBytes, _ := bwConn.ReadMessage()
+		if err := json.Unmarshal(wsRespBytes, &wsResp); err != nil {
+			// if err := bwConn.ReadJSON(&wsResp); err != nil {
 			log.Println("binanceMarketOHLCVStream bwCon read error:", err)
-			time.Sleep(time.Second * 15)
+			log.Println("wsRespBytes:", string(wsRespBytes))
+			time.Sleep(time.Second * 10)
 
 			select {
 			case chanRestartBinanceOHLCVMarketStream <- true:

@@ -131,7 +131,7 @@ func binanceAssetStream() {
 		if err := json.Unmarshal(wsRespBytes, &wsResp); err != nil {
 			log.Println("binanceAssetStream bwCon read error:", err)
 			log.Println("wsRespBytes:", string(wsRespBytes))
-			time.Sleep(time.Second * 15)
+			time.Sleep(time.Second * 10)
 
 			select {
 			case chanRestartBinanceAssetStream <- true:
