@@ -27,7 +27,7 @@ var (
 
 type markets struct {
 	ID       uint64 `sql:"index"`
-	Pair     string `sql:"index"`
+	Pair     string `sql:"unique index"`
 	Status   string `sql:"index"`
 	Exchange string `sql:"index"`
 

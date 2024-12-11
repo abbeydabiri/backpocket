@@ -54,7 +54,9 @@ func sqlDBInit() {
 			}
 		}
 	}
-	time.Sleep(time.Second)
+	// if !lExists {
+	// 	time.Sleep(time.Second * 5)
+	// }
 }
 
 func sqlTableCreate(reflectType reflect.Type) (success bool) {

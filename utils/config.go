@@ -13,6 +13,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	//needed for postgresql
 	_ "github.com/lib/pq"
+	//needed for sqlite
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/nacl/secretbox"
@@ -23,7 +25,7 @@ const (
 	nonceSize = 24
 )
 
-//Config structure
+// Config structure
 type configType struct {
 	Timezone, Cookie, Path,
 	Address, OS, APIkey,
@@ -42,13 +44,13 @@ type configType struct {
 	CGate, CSplash map[string]string
 }
 
-//Config to be exported globally
+// Config to be exported globally
 var (
 	Config configType
 	SqlDB  *sqlx.DB
 )
 
-//Init ...
+// Init ...
 func Init(yamlConfig []byte) {
 
 	viper.SetConfigType("yaml")
@@ -118,16 +120,21 @@ func ConnectDB() {
 		log.Panicf("error opening database file %v \n", err)
 	}
 	//SQL Connection for POSTGRES
+
+	//SQL Connection for SQLITE
+	// if SqlDB, err = sqlx.Open("sqlite3", "backpocket.db"); err != nil {
+	// 	log.Panicf("error opening database file %v \n", err)
+	// }
 }
 
-//Encrypt ...
+// Encrypt ...
 func Encrypt(in []byte) (out []byte) {
 	key, nonce := keyNounce()
 	out = secretbox.Seal(out, in, nonce, key)
 	return
 }
 
-//Decrypt ...
+// Decrypt ...
 func Decrypt(in []byte) (out []byte) {
 	key, nonce := keyNounce()
 	out, _ = secretbox.Open(out, in, nonce, key)

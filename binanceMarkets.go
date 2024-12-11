@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,7 +17,8 @@ var (
 	chanRestartBinanceOHLCVMarketStream = make(chan bool, 10)
 )
 
-func binanceMarketGet() {
+func binanceMarketGet(wg *sync.WaitGroup) {
+	lFirstRun := true
 	for {
 		httpClient := http.Client{Timeout: time.Duration(time.Second * 5)}
 		httpRequest, _ := http.NewRequest("GET", binanceRestURL+"/exchangeInfo", nil)
@@ -51,6 +53,12 @@ func binanceMarketGet() {
 			log.Panic(err.Error())
 			return
 		}
+
+		sqlBatchMarkets := []markets{}
+		// sqlBatchInsert := `insert into markets (id,pair,status,exchange,numoftrades,closed,baseasset,quoteasset,takeprofit,stoploss,minnotional,minqty,maxqty,stepsize,minprice,maxprice,ticksize,open,close,high,low,volume,volumequote,lastprice,price,upperband,middleband,lowerband,firstbid,secondbid,lastbid,firstask,secondask,lastask,bidqty,bidprice,askqty,askprice,pricechange,pricechangepercent,highprice,lowprice)
+		// values (:id, :pair, :status, :exchange, :num_of_trades, :closed, :base_asset, :quote_asset  ,:take_profit, :stop_loss, :min_notional, :min_qty, :max_qty, :step_size, :min_price, :max_price, :tick_size, :open, :close, :high, :low, :volume, :volume_quote, :last_price, :price, :upper_band, :middle_band, :lower_band, :first_bid, :second_bid, :last_bid, :first_ask, :second_ask, :last_ask, :bid_qty, :bid_price, :ask_qty, :ask_price, :price_change, :price_change_percent, :high_price, :low_price )`
+		sqlBatchInsert := `insert into markets (id,pair,status,exchange,numoftrades,closed,baseasset,quoteasset,takeprofit,stoploss,minnotional,minqty,maxqty,stepsize,minprice,maxprice,ticksize,open,close,high,low,volume,volumequote,lastprice,price,upperband,middleband,lowerband,firstbid,secondbid,lastbid,firstask,secondask,lastask,bidqty,bidprice,askqty,askprice,pricechange,pricechangepercent,highprice,lowprice)
+		values (:id, :pair, :status, :exchange, :numoftrades, :closed, :baseasset, :quoteasset  ,:takeprofit, :stoploss, :minnotional, :minqty, :maxqty, :stepsize, :minprice, :maxprice, :ticksize, :open, :close, :high, :low, :volume, :volumequote, :lastprice, :price, :upperband, :middleband, :lowerband, :firstbid, :secondbid, :lastbid, :firstask, :secondask, :lastask, :bidqty, :bidprice, :askqty, :askprice, :pricechange, :pricechangepercent, :highprice, :lowprice )`
 
 		for _, marketPair := range exchangeInfo.Symbols {
 
@@ -110,28 +118,40 @@ func binanceMarketGet() {
 
 				if market.Pair != "" {
 					//save market to db
-
-					if market.ID > 0 {
-						updateMarket(market)
-					} else {
-						market.ID = sqlTableID()
-						if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(market), reflect.ValueOf(market)); len(sqlParams) > 0 {
-							_, err := utils.SqlDB.Exec(sqlQuery, sqlParams...)
-							if err != nil {
-								log.Println(sqlQuery)
-								log.Println(sqlParams)
-								log.Println(err.Error())
-							}
+					if market.ID == 0 {
+						if !lFirstRun {
+							log.Printf("Market is Missing ID after First Run: %+v /n", market)
 						}
+
+						market.ID = sqlTableID()
+						sqlBatchMarkets = append(sqlBatchMarkets, market)
 					}
+					updateMarket(market)
 					wsBroadcastMarket <- market
 					//save market to db
 				}
 			}
 		}
 
-		// dbSetupMarkets()
-		time.Sleep(time.Minute)
+		if lFirstRun {
+			sqlTempBatch := []markets{}
+			for _, market := range sqlBatchMarkets {
+				sqlTempBatch = append(sqlTempBatch, market)
+				if len(sqlTempBatch) == 100 {
+					go func() {
+						if _, err := utils.SqlDB.NamedExec(sqlBatchInsert, sqlTempBatch); err != nil {
+							log.Println("sqlBatchMarkets Error:", err.Error())
+						}
+					}()
+					time.Sleep(time.Millisecond * 200)
+					sqlTempBatch = nil
+				}
+			}
+			wg.Done()
+		}
+		lFirstRun = false
+
+		time.Sleep(time.Minute * 5)
 	}
 }
 

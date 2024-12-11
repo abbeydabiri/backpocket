@@ -26,7 +26,8 @@ var (
 type bidAskStruct struct {
 	Price, Quantity,
 	Percentage,
-	Total float64
+	Total, QuoteQty,
+	QuoteTotal float64
 }
 
 // func (ba bidASkStruct) MarshalJSON() ([]byte, error) {

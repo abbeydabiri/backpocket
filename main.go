@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
@@ -83,10 +84,13 @@ func main() {
 	go apiStrategyStopLossTakeProfit()
 
 	go binanceAssetGet()
-	go binanceMarketGet()
-	go binanceAssetStream()
 
-	time.Sleep(time.Second * 2)
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go binanceMarketGet(&wg)
+	wg.Wait()
+	go binanceAssetStream()
 
 	go binanceTradeStream() //disabled due to data overflooding
 	go binanceOrderBookStream()
