@@ -44,6 +44,15 @@ func binanceTradeStream() {
 			}
 			marketListMutex.RUnlock()
 
+			if streamParams == nil {
+				log.Println("streamParams is nil - sleeping two seconds")
+				time.Sleep(time.Second * 2)
+				chanRestartBinanceTradeStream <- true
+				continue
+			} else {
+				log.Println("streamParams is no longer nil")
+			}
+
 			bwConn.Close()
 			bwConn = binanceWSConnect(streamParams)
 			if _, _, err := bwConn.ReadMessage(); err != nil {

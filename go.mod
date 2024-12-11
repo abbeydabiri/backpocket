@@ -10,6 +10,7 @@ require (
 	github.com/jinzhu/copier v0.3.4
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.4
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/muzykantov/orderbook v0.0.0-20190314143358-f93a3deda343
 	github.com/spf13/viper v1.10.1
 	github.com/swaggo/http-swagger v1.3.4

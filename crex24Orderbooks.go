@@ -284,32 +284,42 @@ func crex24OrderBookStream() {
 		// sort the oldAsks in order of price time priorit
 
 		var prevBidTotal float64
-		var bidBaseTotal float64
+		var prevBidQuoteTotal float64
 		for id, bid := range orderbook.Bids {
-			bid.Total = bid.Quantity + prevBidTotal
-			orderbook.Bids[id] = bid
+
+			bid.QuoteQty = bid.Quantity * bid.Price
+			prevBidQuoteTotal += bid.QuoteQty
+			bid.QuoteTotal = prevBidQuoteTotal
+
 			prevBidTotal += bid.Quantity
-			bidBaseTotal += bid.Quantity * bid.Price
+			bid.Total = prevBidTotal
+
+			orderbook.Bids[id] = bid
 		}
-		orderbook.BidsBaseTotal = bidBaseTotal
-		orderbook.BidsQuoteTotal = prevBidTotal
+		orderbook.BidsBaseTotal = prevBidTotal
+		orderbook.BidsQuoteTotal = prevBidQuoteTotal
 		for id := range orderbook.Bids {
-			orderbook.Bids[id].Percentage = utils.TruncateFloat((orderbook.Bids[id].Quantity/orderbook.BidsQuoteTotal)*100, 2)
+			orderbook.Bids[id].Percentage = utils.TruncateFloat((orderbook.Bids[id].Quantity/orderbook.BidsBaseTotal)*100, 3)
 		}
 
 		//
 		var prevAskTotal float64
-		var askBaseTotal float64
+		var prevAskQuoteTotal float64
 		for id, ask := range orderbook.Asks {
-			ask.Total = ask.Quantity + prevAskTotal
+
+			ask.QuoteQty = ask.Quantity * ask.Price
+			prevAskQuoteTotal += ask.QuoteQty
+			ask.QuoteTotal = prevAskQuoteTotal
+
 			prevAskTotal += ask.Quantity
-			askBaseTotal += ask.Quantity * ask.Price
+			ask.Total = prevAskTotal
+
 			orderbook.Asks[id] = ask
 		}
-		orderbook.AsksBaseTotal = askBaseTotal
-		orderbook.AsksQuoteTotal = prevAskTotal
+		orderbook.AsksBaseTotal = prevAskTotal
+		orderbook.AsksQuoteTotal = prevAskQuoteTotal
 		for id := range orderbook.Asks {
-			orderbook.Asks[id].Percentage = utils.TruncateFloat((orderbook.Asks[id].Quantity/orderbook.AsksQuoteTotal)*100, 2)
+			orderbook.Asks[id].Percentage = utils.TruncateFloat((orderbook.Asks[id].Quantity/orderbook.AsksBaseTotal)*100, 3)
 		}
 
 		// orderbook.Asks = oldAsks

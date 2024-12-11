@@ -24,7 +24,7 @@ type binanceOrderType struct {
 	Takeprofit, Stoploss float64
 
 	Time, TransactTime int64
-	Price, OrigQty, ExecutedQty,
+	Price, OrigQty, ExecutedQty, CummulativeQuoteQty,
 	Symbol, Status, Side string
 }
 
@@ -152,7 +152,15 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) {
 
 		order.Price, _ = strconv.ParseFloat(binanceOrder.Price, 64)
 		order.Quantity, _ = strconv.ParseFloat(binanceOrder.OrigQty, 64)
-		order.Total = order.Price * order.Quantity
+		order.Total = utils.TruncateFloat(order.Price*order.Quantity, 8)
+
+		cummulativeQuoteQty, _ := strconv.ParseFloat(binanceOrder.CummulativeQuoteQty, 64)
+		executedQty, _ := strconv.ParseFloat(binanceOrder.ExecutedQty, 64)
+		if binanceOrder.Status == "CANCELED" && executedQty > 0 {
+			order.Status = "FILLED"
+			order.Quantity = executedQty
+			order.Total = cummulativeQuoteQty
+		}
 		order.ID = sqlTableID()
 
 		ordersTableMutex.Lock()

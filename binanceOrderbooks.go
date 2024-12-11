@@ -92,38 +92,42 @@ func binanceOrderBookStream() {
 
 		orderbook.Bids = nil
 		var prevBidTotal float64
-		var bidBaseTotal float64
+		var prevBidQuoteTotal float64
 		for _, bid := range wsResp.Data.Bids {
 			price, _ := strconv.ParseFloat(bid[0], 64)
 			quantity, _ := strconv.ParseFloat(bid[1], 64)
-			orderbook.Bids = append(orderbook.Bids, bidAskStruct{Price: price, Quantity: quantity, Total: prevBidTotal + quantity})
+			quoteQty := quantity * price
+
+			orderbook.Bids = append(orderbook.Bids, bidAskStruct{Price: price, Quantity: quantity, Total: prevBidTotal + quantity, QuoteQty: quoteQty, QuoteTotal: prevBidQuoteTotal + quoteQty})
 			prevBidTotal += quantity
-			bidBaseTotal += quantity * price
+			prevBidQuoteTotal += quoteQty
 		}
-		orderbook.BidsBaseTotal = bidBaseTotal
-		orderbook.BidsQuoteTotal = prevBidTotal
+		orderbook.BidsBaseTotal = prevBidTotal
+		orderbook.BidsQuoteTotal = prevBidQuoteTotal
 		// bidsQuoteAverage := orderbook.BidsQuoteTotal / float64(len(orderbook.Bids))
 		for id := range orderbook.Bids {
-			orderbook.Bids[id].Percentage = utils.TruncateFloat((orderbook.Bids[id].Total/orderbook.BidsQuoteTotal)*100.00, 3)
+			orderbook.Bids[id].Percentage = utils.TruncateFloat((orderbook.Bids[id].Total/orderbook.BidsBaseTotal)*100.00, 3)
 		}
 
 		//
 
 		orderbook.Asks = nil
 		var prevAskTotal float64
-		var askBaseTotal float64
+		var prevAskQuoteTotal float64
 		for _, ask := range wsResp.Data.Asks {
 			price, _ := strconv.ParseFloat(ask[0], 64)
 			quantity, _ := strconv.ParseFloat(ask[1], 64)
-			orderbook.Asks = append(orderbook.Asks, bidAskStruct{Price: price, Quantity: quantity, Total: prevAskTotal + quantity})
+			quoteQty := quantity * price
+
+			orderbook.Asks = append(orderbook.Asks, bidAskStruct{Price: price, Quantity: quantity, Total: prevAskTotal + quantity, QuoteQty: quoteQty, QuoteTotal: prevAskQuoteTotal + quoteQty})
 			prevAskTotal += quantity
-			askBaseTotal += quantity * price
+			prevAskQuoteTotal += quoteQty
 		}
-		orderbook.AsksBaseTotal = askBaseTotal
-		orderbook.AsksQuoteTotal = prevAskTotal
+		orderbook.AsksBaseTotal = prevAskTotal
+		orderbook.AsksQuoteTotal = prevAskQuoteTotal
 		// asksQuoteAverage := orderbook.AsksQuoteTotal / float64(len(orderbook.Asks))
 		for id := range orderbook.Asks {
-			orderbook.Asks[id].Percentage = utils.TruncateFloat((orderbook.Asks[id].Total/orderbook.AsksQuoteTotal)*100.00, 3)
+			orderbook.Asks[id].Percentage = utils.TruncateFloat((orderbook.Asks[id].Total/orderbook.AsksBaseTotal)*100.00, 3)
 		}
 
 		updateOrderbook(orderbook)

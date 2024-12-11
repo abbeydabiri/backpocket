@@ -36,7 +36,7 @@ type orders struct {
 	Side string `sql:"index"`
 	Type string `sql:"index"`
 
-	OrderID uint64 `sql:"index"`
+	OrderID uint64 `sql:"unique index"`
 
 	RefSide      string `sql:"index"`
 	AutoRepeat   int    `sql:"index"`
@@ -45,6 +45,8 @@ type orders struct {
 	RefOrderID   uint64 `sql:"index"`
 	RefEnabled   int    `sql:"index"`
 
+	// ExecutedQty,
+	// ExecutedTotal,
 	Price, Quantity,
 	Total, Stoploss,
 	Takeprofit float64

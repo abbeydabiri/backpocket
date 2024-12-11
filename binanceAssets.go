@@ -238,7 +238,7 @@ func binanceAssetStream() {
 
 				order.Price, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderPrice, 64)
 				order.Quantity, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderQuantity, 64)
-				order.Total = order.Price * order.Quantity
+				order.Total = utils.TruncateFloat(order.Price*order.Quantity, 8)
 
 				order.ID = sqlTableID()
 
@@ -251,6 +251,16 @@ func binanceAssetStream() {
 				ordersTableMutex.Unlock()
 			} else {
 				order.Status = wRespOrderupdate.Data.CurrentOrderStatus
+				order.Price, _ = strconv.ParseFloat(wRespOrderupdate.Data.LastExecutedPrice, 64)
+				executedQty, _ := strconv.ParseFloat(wRespOrderupdate.Data.CummulativeFilledQty, 64)
+				cummulativeQuoteQty, _ := strconv.ParseFloat(wRespOrderupdate.Data.CummulativeQuoteTransactedQty, 64)
+
+				if executedQty > 0 && order.Status == "CANCELED" {
+					order.Status = "FILLED"
+					order.Quantity = executedQty
+					order.Total = cummulativeQuoteQty
+				}
+
 				order.Updated = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
 				if order.Created.IsZero() {
 					order.Created = order.Updated
