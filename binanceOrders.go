@@ -175,6 +175,11 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) {
 
 	} else {
 		order.Status = binanceOrder.Status
+		executedQty, _ := strconv.ParseFloat(binanceOrder.ExecutedQty, 64)
+		if binanceOrder.Status == "CANCELED" && executedQty > 0 {
+			order.Status = "FILLED"
+		}
+
 		if binanceOrder.Time != 0 {
 			order.Updated = time.Unix(binanceOrder.Time/1000, 0)
 		}
