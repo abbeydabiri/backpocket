@@ -178,7 +178,7 @@ func apiStrategyStopLossTakeProfit() {
 				// if market.Close > market.Open && market.Price > market.LastPrice {
 				// if market.Price > market.LastPrice && market.Close < market.Open {
 
-				if market.Close > market.Open && market.Price > market.LastPrice && && market.Price > market.LowerBand {
+				if market.Close > market.Open && market.Price > market.LastPrice && market.Price > market.LowerBand {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
