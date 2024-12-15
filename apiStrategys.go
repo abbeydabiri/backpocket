@@ -17,7 +17,9 @@ import (
 var (
 	strategyList    []strategys
 	strategyListMap = make(map[string]int)
-	bollingerBands  = make(map[string][]float64)
+
+	marketRSIBands = make(map[string][]float64)
+	bollingerBands = make(map[string][]float64)
 
 	bollingerBandsMutex = sync.RWMutex{}
 
@@ -168,7 +170,7 @@ func apiStrategyStopLossTakeProfit() {
 						Use RSI > 70 to confirm overbought conditions.
 				*/
 
-				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && market.BidQty < market.AskQty && market.RSI > float64(70) {
+				if market.Close > market.MiddleBand && market.Close < market.Open && market.Price < market.LastPrice && market.BidQty < market.AskQty && market.RSI > float64(70) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -210,7 +212,7 @@ func apiStrategyStopLossTakeProfit() {
 						If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
 				*/
 
-				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && market.BidQty > market.AskQty && market.RSI < float64(30) {
+				if market.Close < market.MiddleBand && market.Close > market.Open && market.Price > market.LastPrice && market.BidQty > market.AskQty && market.RSI < float64(30) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -271,9 +273,36 @@ func apiStrategyStopLossTakeProfit() {
 
 func calculateBollingerBands(market *markets) {
 
+	rsiLength := 5
 	bollingerBandsMutex.RLock()
+	rsiBands := marketRSIBands[market.Pair]
 	marketBands := bollingerBands[market.Pair]
 	bollingerBandsMutex.RUnlock()
+
+	rsiStart := len(rsiBands) - rsiLength
+	if rsiStart < 0 {
+		rsiStart = 0
+	}
+
+	//calculate RSI
+	var rsiGain float64
+	var rsiLoss float64
+
+	rsiBandsClose := rsiBands[rsiStart:]
+	for x, closePrice := range rsiBandsClose {
+		if x == 0 {
+			continue
+		}
+		if closePrice > rsiBandsClose[x-1] {
+			rsiGain += closePrice - rsiBandsClose[x-1]
+		} else {
+			rsiLoss += rsiBandsClose[x-1] - closePrice
+		}
+	}
+
+	rsiValue := (rsiGain / float64(rsiLength)) / (rsiLoss / float64(rsiLength))
+	market.RSI = 100 - (100 / (1 + rsiValue))
+	//calculate RSI
 
 	if len(marketBands) < 3 {
 		return
@@ -302,30 +331,6 @@ func calculateBollingerBands(market *markets) {
 	market.UpperBand = market.MiddleBand + (2 * sumAverageCloseSquared)
 	market.LowerBand = market.MiddleBand - (2 * sumAverageCloseSquared)
 
-	//calculate RSI
-	rsiLength := 5
-	rsiStart := len(marketBands) - rsiLength
-	if rsiStart < 0 {
-		rsiStart = 0
-	}
-
-	var rsiGain float64
-	var rsiLoss float64
-
-	rsiBandsClose := marketBands[rsiStart:]
-	for x, closePrice := range rsiBandsClose {
-		if x == 0 {
-			continue
-		}
-		if closePrice > rsiBandsClose[x-1] {
-			rsiGain += closePrice - rsiBandsClose[x-1]
-		} else {
-			rsiLoss += rsiBandsClose[x-1] - closePrice
-		}
-	}
-
-	rsiValue := (rsiGain / float64(rsiLength)) / (rsiLoss / float64(rsiLength))
-	market.RSI = 100 - (100 / (1 + rsiValue))
 }
 
 func dbStupStrategys() {
