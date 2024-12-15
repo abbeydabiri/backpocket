@@ -346,11 +346,15 @@ func binanceMarketOHLCVStream() {
 		// }
 
 		bollingerBandsMutex.Lock()
-		if wsResp.Data.Kline.Closed || len(bollingerBands[market.Pair]) < 10 {
+		if wsResp.Data.Kline.Closed || len(bollingerBands[market.Pair]) < 20 {
 			bollingerBands[market.Pair] = append(bollingerBands[market.Pair], market.Close)
-			if len(bollingerBands[market.Pair]) > 20 {
+			if len(bollingerBands[market.Pair]) > 30 {
 				bollingerBands[market.Pair] = bollingerBands[market.Pair][1:]
 			}
+		}
+		marketRSIBands[market.Pair] = append(marketRSIBands[market.Pair], market.Close)
+		if len(marketRSIBands[market.Pair]) > 14 {
+			marketRSIBands[market.Pair] = marketRSIBands[market.Pair][1:]
 		}
 		bollingerBandsMutex.Unlock()
 		calculateBollingerBands(&market)
