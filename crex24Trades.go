@@ -46,6 +46,7 @@ func crex24TradeStream() {
 		if market.LastPrice == 0 {
 			market.LastPrice = market.Price
 		}
+
 		updateMarket(market)
 
 		if lUpdate {

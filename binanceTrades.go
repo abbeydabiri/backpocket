@@ -108,6 +108,7 @@ func binanceTradeStream() {
 		// 	default:
 		// 	}
 		// }
+
 		market.LastPrice = market.Price
 		market.Price = trade.Price
 		updateMarket(market)
