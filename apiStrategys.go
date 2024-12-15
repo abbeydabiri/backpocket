@@ -173,7 +173,7 @@ func apiStrategyStopLossTakeProfit() {
 						Use RSI > 70 to confirm overbought conditions.
 				*/
 
-				// if market.Pair == "1MBABYDOGEUSDT" && market.RSI > 0 {
+				// if market.Pair == "XRPUSDT" && market.RSI > 0 {
 				// 	fmt.Printf("\n\n\n")
 				// 	fmt.Println("market: ", market.Pair, " - CHECK TO SELL BACK - ",
 				// 		market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70))
@@ -183,7 +183,7 @@ func apiStrategyStopLossTakeProfit() {
 				// 	fmt.Println(market.Close >= market.UpperBand, market.Close < market.Open, market.Price < market.LastPrice, orderBookBidsBaseTotal < orderBookAsksBaseTotal, market.RSI > float64(70))
 				// }
 
-				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70) {
+				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(60) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -225,7 +225,17 @@ func apiStrategyStopLossTakeProfit() {
 						If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
 				*/
 
-				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(30) {
+				// if market.Pair == "XRPUSDT" && market.RSI > 0 {
+				// 	fmt.Printf("\n\n\n")
+				// 	fmt.Println("market: ", market.Pair, " - CHECK TO BUY BACK - ",
+				// 		market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(30))
+
+				// 	fmt.Println("market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(30)")
+				// 	fmt.Println(market.Close, " <= ", market.LowerBand, " && ", market.Close, " > ", market.Open, " && ", market.Price, " > ", market.LastPrice, " && ", orderBookBidsBaseTotal, " > ", orderBookAsksBaseTotal, " && ", market.RSI, " < ", float64(30))
+				// 	fmt.Println(market.Close <= market.LowerBand, market.Close > market.Open, market.Price > market.LastPrice, orderBookBidsBaseTotal > orderBookAsksBaseTotal, market.RSI < float64(30))
+				// }
+
+				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(40) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -298,15 +308,18 @@ func calculateRSIBands(market *markets) {
 		if x == 0 {
 			continue
 		}
-		if closePrice > rsiBands[x-1] {
+
+		switch {
+		case closePrice > rsiBands[x-1]:
 			rsiGain += closePrice - rsiBands[x-1]
-		} else {
+		case closePrice < rsiBands[x-1]:
 			rsiLoss += rsiBands[x-1] - closePrice
 		}
+
 	}
 
 	rsiValue := (rsiGain / float64(len(rsiBands))) / (rsiLoss / float64(len(rsiBands)))
-	market.RSI = 100 - (100 / (1 + rsiValue))
+	market.RSI = utils.TruncateFloat(100-(100/(1+rsiValue)), 2)
 	//calculate RSI
 }
 
