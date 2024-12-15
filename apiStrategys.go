@@ -183,7 +183,7 @@ func apiStrategyStopLossTakeProfit() {
 				// 	fmt.Println(market.Close >= market.UpperBand, market.Close < market.Open, market.Price < market.LastPrice, orderBookBidsBaseTotal < orderBookAsksBaseTotal, market.RSI > float64(70))
 				// }
 
-				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(50) {
+				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -225,7 +225,7 @@ func apiStrategyStopLossTakeProfit() {
 						If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
 				*/
 
-				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(50) {
+				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(30) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
