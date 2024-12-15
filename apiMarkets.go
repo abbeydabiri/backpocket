@@ -54,7 +54,8 @@ type markets struct {
 
 	PriceChange,
 	PriceChangePercent,
-	HighPrice, LowPrice float64
+	HighPrice, LowPrice,
+	RSI float64
 }
 
 func getMarket(marketPair, marketExchange string) (market markets) {

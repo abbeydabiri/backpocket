@@ -148,13 +148,27 @@ func apiStrategyStopLossTakeProfit() {
 
 			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
 			switch oldOrder.Side {
-			case "BUY": //check if Stop Loss (SL) or Take Profit (TP)Matches
+			case "BUY": //CHECK TO SELL BACK
 				oldOrder.RefSide = "SELL"
 
 				// if market.Close < market.Open && market.Price < market.LastPrice {
 				// if market.Price < market.LastPrice && market.Close > market.Open {
+				// if market.Close < market.Open && market.Price < market.LastPrice && market.LastPrice < market.LowerBand {
 
-				if market.Close < market.Open && market.Price < market.LastPrice && market.LastPrice < market.LowerBand {
+				/*
+					*Best Time to Sell:*
+
+					Sell at the Upper Band:
+						When the Current Price touches or exceeds the Upper Bollinger Band, it signals potential overbought conditions.
+
+					Volume Confirmation:
+						Check for decreasing volume or signs of a reversal (e.g., red candles forming after hitting the Upper Band).
+
+					Overbought Signals:
+						Use RSI > 70 to confirm overbought conditions.
+				*/
+
+				if market.Price >= market.UpperBand && market.Price < market.Open && market.Price < market.LastPrice && market.BidQty < market.AskQty && market.RSI > 30 {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -172,13 +186,31 @@ func apiStrategyStopLossTakeProfit() {
 					oldOrderList = append(oldOrderList, oldOrder)
 				}
 
-			case "SELL":
+			case "SELL": //CHECK TO BUY BACK
 				oldOrder.RefSide = "BUY"
 
 				// if market.Close > market.Open && market.Price > market.LastPrice {
 				// if market.Price > market.LastPrice && market.Close < market.Open {
+				// if market.Close > market.Open && market.Price > market.LastPrice && market.LastPrice > market.MiddleBand {
 
-				if market.Close > market.Open && market.Price > market.LastPrice && market.LastPrice > market.MiddleBand {
+				/*
+					*Best Time to Buy:*
+
+					Buy at the Lower Band:
+						When the Current Price touches or dips below the Lower Bollinger Band, it signals that the price is potentially oversold.
+						Look for confirmation that the price is starting to rebound (e.g., a green candle forming on the next tick).
+
+					Volume Confirmation:
+						High volume on the bounce indicates strong buying interest.
+
+					Oversold Signals:
+						Use a complementary indicator like RSI (Relative Strength Index) to confirm oversold conditions (e.g., RSI < 30).
+
+					Avoid Buying in a Downtrend:
+						If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
+				*/
+
+				if market.Price <= market.LowerBand && market.Price > market.Open && market.Price > market.LastPrice && market.BidQty > market.AskQty && market.RSI < 30 {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -269,6 +301,31 @@ func calculateBollingerBands(market *markets) {
 
 	market.UpperBand = market.MiddleBand + (2 * sumAverageCloseSquared)
 	market.LowerBand = market.MiddleBand - (2 * sumAverageCloseSquared)
+
+	//calculate RSI
+	rsiLength := 5
+	rsiStart := len(marketBands) - rsiLength
+	if rsiStart < 0 {
+		rsiStart = 0
+	}
+
+	var rsiGain float64
+	var rsiLoss float64
+
+	rsiBandsClose := marketBands[rsiStart:]
+	for x, closePrice := range rsiBandsClose {
+		if x == 0 {
+			continue
+		}
+		if closePrice > rsiBandsClose[x-1] {
+			rsiGain += closePrice - rsiBandsClose[x-1]
+		} else {
+			rsiLoss += rsiBandsClose[x-1] - closePrice
+		}
+	}
+
+	rsiValue := (rsiGain / float64(rsiLength)) / (rsiLoss / float64(rsiLength))
+	market.RSI = 100 - (100 / (1 + rsiValue))
 }
 
 func dbStupStrategys() {
