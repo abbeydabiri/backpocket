@@ -24,15 +24,17 @@ func binanceMarketGet(wg *sync.WaitGroup) {
 		httpRequest, _ := http.NewRequest("GET", binanceRestURL+"/exchangeInfo", nil)
 		httpResponse, err := httpClient.Do(httpRequest)
 		if err != nil {
-			log.Panic(err.Error())
-			return
+			log.Printf(err.Error())
+			time.Sleep(time.Minute * 5)
+			continue
 		}
 		defer httpResponse.Body.Close()
 
 		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
 		if err != nil {
-			log.Panic(err.Error())
-			return
+			log.Printf(err.Error())
+			time.Sleep(time.Minute * 5)
+			continue
 		}
 
 		var exchangeInfo struct {
@@ -352,12 +354,16 @@ func binanceMarketOHLCVStream() {
 				bollingerBands[market.Pair] = bollingerBands[market.Pair][1:]
 			}
 		}
-		marketRSIBands[market.Pair] = append(marketRSIBands[market.Pair], market.Close)
+		bollingerBandsMutex.Unlock()
+		calculateBollingerBands(&market)
+
+		bollingerBandsMutex.Lock()
+		marketRSIBands[market.Pair] = append(marketRSIBands[market.Pair], market.Price)
 		if len(marketRSIBands[market.Pair]) > 14 {
 			marketRSIBands[market.Pair] = marketRSIBands[market.Pair][1:]
 		}
 		bollingerBandsMutex.Unlock()
-		calculateBollingerBands(&market)
+		calculateRSIBands(&market)
 		updateMarket(market)
 
 		// select {

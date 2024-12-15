@@ -21,6 +21,7 @@ var (
 	marketRSIBands = make(map[string][]float64)
 	bollingerBands = make(map[string][]float64)
 
+	marketRSIBandsMutex = sync.RWMutex{}
 	bollingerBandsMutex = sync.RWMutex{}
 
 	strategyListMutex    = sync.RWMutex{}
@@ -96,7 +97,7 @@ func apiStrategyStopLossTakeProfit() {
 	for orderbook := range chanStoplossTakeProfit {
 
 		orderbookPair := ""
-		var orderbookBidPrice, orderbookAskPrice float64
+		var orderbookBidPrice, orderbookAskPrice, orderBookBidsBaseTotal, orderBookAsksBaseTotal float64
 
 		orderbookMutex.RLock()
 		orderbookPair = orderbook.Pair
@@ -106,6 +107,8 @@ func apiStrategyStopLossTakeProfit() {
 		if len(orderbook.Asks) > 0 {
 			orderbookAskPrice = orderbook.Asks[0].Price
 		}
+		orderBookBidsBaseTotal = orderbook.BidsBaseTotal
+		orderBookAsksBaseTotal = orderbook.AsksBaseTotal
 		orderbookMutex.RUnlock()
 
 		if orderbookBidPrice == 0 || orderbookAskPrice == 0 {
@@ -170,7 +173,17 @@ func apiStrategyStopLossTakeProfit() {
 						Use RSI > 70 to confirm overbought conditions.
 				*/
 
-				if market.Close > market.MiddleBand && market.Close < market.Open && market.Price < market.LastPrice && market.BidQty < market.AskQty && market.RSI > float64(70) {
+				// if market.Pair == "1MBABYDOGEUSDT" && market.RSI > 0 {
+				// 	fmt.Printf("\n\n\n")
+				// 	fmt.Println("market: ", market.Pair, " - CHECK TO SELL BACK - ",
+				// 		market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70))
+
+				// 	fmt.Println("market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70)")
+				// 	fmt.Println(market.Close, " > ", market.UpperBand, " && ", market.Close, " < ", market.Open, " && ", market.Price, " < ", market.LastPrice, " && ", orderBookBidsBaseTotal, " < ", orderBookAsksBaseTotal, " && ", market.RSI, " > ", float64(70))
+				// 	fmt.Println(market.Close >= market.UpperBand, market.Close < market.Open, market.Price < market.LastPrice, orderBookBidsBaseTotal < orderBookAsksBaseTotal, market.RSI > float64(70))
+				// }
+
+				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -212,7 +225,7 @@ func apiStrategyStopLossTakeProfit() {
 						If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
 				*/
 
-				if market.Close < market.MiddleBand && market.Close > market.Open && market.Price > market.LastPrice && market.BidQty > market.AskQty && market.RSI < float64(30) {
+				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && market.RSI < float64(30) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -271,38 +284,37 @@ func apiStrategyStopLossTakeProfit() {
 	}
 }
 
-func calculateBollingerBands(market *markets) {
+func calculateRSIBands(market *markets) {
 
-	rsiLength := 5
-	bollingerBandsMutex.RLock()
+	marketRSIBandsMutex.RLock()
 	rsiBands := marketRSIBands[market.Pair]
-	marketBands := bollingerBands[market.Pair]
-	bollingerBandsMutex.RUnlock()
-
-	rsiStart := len(rsiBands) - rsiLength
-	if rsiStart < 0 {
-		rsiStart = 0
-	}
+	marketRSIBandsMutex.RUnlock()
 
 	//calculate RSI
 	var rsiGain float64
 	var rsiLoss float64
 
-	rsiBandsClose := rsiBands[rsiStart:]
-	for x, closePrice := range rsiBandsClose {
+	for x, closePrice := range rsiBands {
 		if x == 0 {
 			continue
 		}
-		if closePrice > rsiBandsClose[x-1] {
-			rsiGain += closePrice - rsiBandsClose[x-1]
+		if closePrice > rsiBands[x-1] {
+			rsiGain += closePrice - rsiBands[x-1]
 		} else {
-			rsiLoss += rsiBandsClose[x-1] - closePrice
+			rsiLoss += rsiBands[x-1] - closePrice
 		}
 	}
 
-	rsiValue := (rsiGain / float64(rsiLength)) / (rsiLoss / float64(rsiLength))
+	rsiValue := (rsiGain / float64(len(rsiBands))) / (rsiLoss / float64(len(rsiBands)))
 	market.RSI = 100 - (100 / (1 + rsiValue))
 	//calculate RSI
+}
+
+func calculateBollingerBands(market *markets) {
+
+	bollingerBandsMutex.RLock()
+	marketBands := bollingerBands[market.Pair]
+	bollingerBandsMutex.RUnlock()
 
 	if len(marketBands) < 3 {
 		return
