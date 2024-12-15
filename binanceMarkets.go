@@ -201,44 +201,44 @@ func binanceMarket24hrTicker() {
 			//findkey and create if it does not exist
 			if market.Pair != "" {
 				var err error
-				if market.LowPrice, _ = strconv.ParseFloat(marketPair.LowPrice, 64); err != nil {
+				if market.LowPrice, err = strconv.ParseFloat(marketPair.LowPrice, 64); err != nil {
 					log.Println(err.Error())
 				}
 
-				if market.HighPrice, _ = strconv.ParseFloat(marketPair.HighPrice, 64); err != nil {
+				if market.HighPrice, err = strconv.ParseFloat(marketPair.HighPrice, 64); err != nil {
 					log.Println(err.Error())
 				}
 
-				if market.PriceChange, _ = strconv.ParseFloat(marketPair.PriceChange, 64); err != nil {
+				if market.PriceChange, err = strconv.ParseFloat(marketPair.PriceChange, 64); err != nil {
 					log.Println(err.Error())
 				}
 
-				if market.PriceChangePercent, _ = strconv.ParseFloat(marketPair.PriceChangePercent, 64); err != nil {
+				if market.PriceChangePercent, err = strconv.ParseFloat(marketPair.PriceChangePercent, 64); err != nil {
 					log.Println(err.Error())
 				}
 
 				if market.Status != "enabled" {
-					if market.Open, _ = strconv.ParseFloat(marketPair.OpenPrice, 64); err != nil {
+					if market.Open, err = strconv.ParseFloat(marketPair.OpenPrice, 64); err != nil {
 						log.Println(err.Error())
 					}
 
-					if market.AskPrice, _ = strconv.ParseFloat(marketPair.AskPrice, 64); err != nil {
+					if market.AskPrice, err = strconv.ParseFloat(marketPair.AskPrice, 64); err != nil {
 						log.Println(err.Error())
 					}
 
-					if market.AskQty, _ = strconv.ParseFloat(marketPair.AskQty, 64); err != nil {
+					if market.AskQty, err = strconv.ParseFloat(marketPair.AskQty, 64); err != nil {
 						log.Println(err.Error())
 					}
 
-					if market.BidPrice, _ = strconv.ParseFloat(marketPair.BidPrice, 64); err != nil {
+					if market.BidPrice, err = strconv.ParseFloat(marketPair.BidPrice, 64); err != nil {
 						log.Println(err.Error())
 					}
 
-					if market.BidQty, _ = strconv.ParseFloat(marketPair.BidQty, 64); err != nil {
+					if market.BidQty, err = strconv.ParseFloat(marketPair.BidQty, 64); err != nil {
 						log.Println(err.Error())
 					}
 
-					if market.Close, _ = strconv.ParseFloat(marketPair.LastPrice, 64); err != nil {
+					if market.Close, err = strconv.ParseFloat(marketPair.LastPrice, 64); err != nil {
 						log.Println(err.Error())
 					}
 					market.NumOfTrades = marketPair.Count
