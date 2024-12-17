@@ -184,7 +184,11 @@ func apiStrategyStopLossTakeProfit() {
 				// }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 				if market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal { // && market.RSI > float64(75) {
+=======
+				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal { // && market.RSI > float64(75) {
+>>>>>>> Stashed changes
 =======
 				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal { // && market.RSI > float64(75) {
 >>>>>>> Stashed changes
@@ -240,7 +244,11 @@ func apiStrategyStopLossTakeProfit() {
 				// }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 				if market.Close <= market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal { // && market.RSI < float64(25) {
+=======
+				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal { // && market.RSI < float64(25) {
+>>>>>>> Stashed changes
 =======
 				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal { // && market.RSI < float64(25) {
 >>>>>>> Stashed changes
