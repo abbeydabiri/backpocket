@@ -183,7 +183,10 @@ func apiStrategyStopLossTakeProfit() {
 				// 	fmt.Println(market.Close >= market.UpperBand, market.Close < market.Open, market.Price < market.LastPrice, orderBookBidsBaseTotal < orderBookAsksBaseTotal, market.RSI > float64(70))
 				// }
 
-				if market.Open > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < (orderBookAsksBaseTotal-orderBookBidsBaseTotal) { // && market.RSI > float64(75) {
+				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
+				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
+
+				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float(10) { // && market.RSI > float64(75) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -235,7 +238,10 @@ func apiStrategyStopLossTakeProfit() {
 				// 	fmt.Println(market.Close <= market.LowerBand, market.Close > market.Open, market.Price > market.LastPrice, orderBookBidsBaseTotal > orderBookAsksBaseTotal, market.RSI < float64(30))
 				// }
 
-				if market.Open < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && (orderBookBidsBaseTotal-orderBookAsksBaseTotal) > orderBookAsksBaseTotal { // && market.RSI < float64(25) {
+				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
+				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
+
+				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && buyPercentDifference > float(10) { // && market.RSI < float64(25) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
