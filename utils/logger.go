@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +42,7 @@ func startLogger(logPath string) {
 	}
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 	log.SetOutput(logfile)
+	debug.SetCrashOutput(logfile, debug.CrashOptions{})
 }
 
 // WriteFile ...
