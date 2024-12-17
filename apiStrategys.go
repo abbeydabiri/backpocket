@@ -188,7 +188,7 @@ func apiStrategyStopLossTakeProfit() {
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
-						oldOrder.RefTripped = fmt.Sprintf("> %.3f%% TP: %.8f", newTakeprofit, orderbookBidPrice)
+						oldOrder.RefTripped = fmt.Sprintf("> %.3f%% TP: %.8f @ RSI %.2f", newTakeprofit, orderbookBidPrice, market.RSI)
 						oldPriceList = append(oldPriceList, orderbookBidPrice)
 						oldOrderList = append(oldOrderList, oldOrder)
 					}
@@ -240,7 +240,7 @@ func apiStrategyStopLossTakeProfit() {
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
-						oldOrder.RefTripped = fmt.Sprintf("< %.3f%% TP: %.8f", newTakeprofit, orderbookAskPrice)
+						oldOrder.RefTripped = fmt.Sprintf("< %.3f%% TP: %.8f @ RSI %.2f", newTakeprofit, orderbookAskPrice, market.RSI)
 						oldPriceList = append(oldPriceList, orderbookAskPrice)
 						oldOrderList = append(oldOrderList, oldOrder)
 					}
