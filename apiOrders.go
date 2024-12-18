@@ -241,18 +241,18 @@ func updateOrderOnly(order orders) bool {
 		"price": true, "quantity": true, "total": true, "stoploss": true, "takeprofit": true, "created": true, "updated": true,
 	}
 
-	go func() {
-		ordersTableMutex.Lock()
-		if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(order), reflect.ValueOf(order), updateFields); len(sqlParams) > 0 {
-			if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-				log.Println(sqlQuery)
-				log.Println(sqlParams)
-				log.Println(err.Error())
-			}
-
+	// go func() {
+	ordersTableMutex.Lock()
+	if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(order), reflect.ValueOf(order), updateFields); len(sqlParams) > 0 {
+		if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
+			log.Println(sqlQuery)
+			log.Println(sqlParams)
+			log.Println(err.Error())
 		}
-		ordersTableMutex.Unlock()
-	}()
+
+	}
+	ordersTableMutex.Unlock()
+	// }()
 
 	return true
 }
