@@ -1,11 +1,10 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
-	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -58,60 +57,82 @@ type searchOrderMsgType struct {
 	RefID, Exchange string
 }
 
-func searchOrderSQL(msg searchOrderMsgType) (filteredOrderList []orders) {
-	//select from sqlitedb into array of orders
-	var sqlParams []interface{}
-	sqlSearch := "select * from orders where "
+func searchOrderSQL(msg searchOrderMsgType) (filteredOrderList []models.Order) {
 
-	if msg.Pair == "" {
-		msg.Pair = "%"
-	} else {
-		msg.Pair = strings.Replace(msg.Pair, "|", "%", 1)
-	}
-	sqlParams = append(sqlParams, msg.Pair)
-	sqlSearch += fmt.Sprintf(" pair like $%v ", len(sqlParams))
+	var searchText string
+	var searchParams []interface{}
 
-	if msg.Status != "" {
-		sqlParams = append(sqlParams, msg.Status)
-		sqlSearch += fmt.Sprintf(" and status = $%v ", len(sqlParams))
-	}
-
-	if msg.Side != "" {
-		sqlParams = append(sqlParams, msg.Side)
-		sqlSearch += fmt.Sprintf(" and side = $%v ", len(sqlParams))
+	if msg.Pair != "" {
+		searchText = " pair = ? "
+		searchParams = append(searchParams, msg.Pair)
 	}
 
 	if msg.Exchange != "" {
-		sqlParams = append(sqlParams, msg.Exchange)
-		sqlSearch += fmt.Sprintf(" and exchange = $%v ", len(sqlParams))
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " exchange = ? "
+		searchParams = append(searchParams, msg.Exchange)
 	}
 
-	if msg.OrderID != "" {
-		sqlParams = append(sqlParams, "%"+msg.OrderID+"%")
-		sqlSearch += fmt.Sprintf(" and cast(orderid as text) like $%v ", len(sqlParams))
+	if msg.Status != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " status = ? "
+		searchParams = append(searchParams, msg.Status)
+	}
+
+	if msg.Side != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " side = ? "
+		searchParams = append(searchParams, msg.Side)
 	}
 
 	if msg.RefID != "" {
-		sqlParams = append(sqlParams, "%"+msg.RefID+"%")
-		sqlSearch += fmt.Sprintf(" and cast(refid as text) like $%v ", len(sqlParams))
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " refid = ?::bigint "
+		searchParams = append(searchParams, msg.RefID)
 	}
 
-	//ass sql query to check dates between
-	if msg.Start != "" && msg.Stop != "" {
-		sqlParams = append(sqlParams, msg.Start)
-		sqlSearch += fmt.Sprintf(" and created >= $%v ", len(sqlParams))
-
-		sqlParams = append(sqlParams, msg.Stop)
-		sqlSearch += fmt.Sprintf(" and created <= $%v ", len(sqlParams))
+	if msg.OrderID != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " orderid = ?::bigint "
+		searchParams = append(searchParams, msg.OrderID)
 	}
 
-	sqlSearch += " order by created limit 1024000"
+	if msg.Start != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " createdate >= ?::timestamp "
+		searchParams = append(searchParams, msg.Start)
+	}
 
-	if err := utils.SqlDB.Select(&filteredOrderList, sqlSearch, sqlParams...); err != nil {
+	if msg.Stop != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " createdate <= ?::timestamp "
+		searchParams = append(searchParams, msg.Stop)
+	}
+
+	orderby := "exchange, pair, orderid desc"
+
+	if err := utils.SqlDB.Where(searchText, searchParams...).Order(orderby).Find(&filteredOrderList).Error; err != nil {
 		log.Println(err.Error())
-		log.Println(sqlSearch)
-		log.Println(sqlParams)
 	}
+
+	// sql := utils.SqlDB.ToSQL(func(tx *gorm.DB) *gorm.DB {
+	// 	return tx.Where(searchText, searchParams...).Order(orderby).Find(&filteredOrderList)
+	// })
+	// log.Println(sql)
 
 	return
 }

@@ -315,6 +315,11 @@ func binanceWSConnect(streamParams []string) (bwConn *websocket.Conn) {
 		log.Println("dial:", err)
 	}
 
+	if bwConn == nil {
+		log.Println("websocket connection error")
+		return
+	}
+
 	if err := bwConn.WriteJSON(bReq); err != nil {
 		log.Printf("websocket write error: %v \n", err)
 	}

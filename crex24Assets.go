@@ -4,7 +4,6 @@ import (
 	"backpocket/utils"
 	"encoding/json"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -46,21 +45,18 @@ func crex24AssetGet() {
 
 			if !(asset.ID > 0) {
 				//this logic adds a new asset
-				asset.ID = sqlTableID()
 				asset.Symbol = assetBal.Currency
 				asset.State = ""
 				asset.Status = "disabled"
 				asset.Exchange = "crex24"
 
-				if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(asset), reflect.ValueOf(asset)); len(sqlParams) > 0 {
-					if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-						log.Println(err.Error())
-					}
+				if err := utils.SqlDB.Model(&asset).Create(&asset).Error; err != nil {
+					log.Println(err.Error())
 				}
-
 			}
 
 			updateAsset(asset)
+			go saveAsset(asset)
 			//send asset down websocket
 		}
 		time.Sleep(time.Minute * 5)
@@ -83,6 +79,7 @@ func crex24AssetCryptoDepositAddress(currency string) {
 		json.Unmarshal(respBytes, &depositAddressResponse)
 		asset.Address = depositAddressResponse.Address
 		updateAsset(asset)
+		go saveAsset(asset)
 	}
 }
 
@@ -161,18 +158,14 @@ func crex24AssetStream() {
 
 				if !(asset.ID > 0) {
 					//this logic adds a new asset
-					asset.ID = sqlTableID()
 					asset.Symbol = wRespBalance.Data.Asset
 					asset.State = ""
 					asset.Status = "enabled"
 					asset.Exchange = "crex24"
 
-					if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(asset), reflect.ValueOf(asset)); len(sqlParams) > 0 {
-						if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-							log.Println(err.Error())
-						}
+					if err := utils.SqlDB.Model(&asset).Create(&asset).Error; err != nil {
+						log.Println(err.Error())
 					}
-
 				}
 
 				select {
@@ -181,6 +174,7 @@ func crex24AssetStream() {
 				}
 
 				updateAsset(asset)
+				go saveAsset(asset)
 
 
 
@@ -202,16 +196,14 @@ func crex24AssetStream() {
 
 					if !(asset.ID > 0) {
 						//this logic adds a new asset
-						asset.ID = sqlTableID()
+
 						asset.Symbol = bal.Asset
 						asset.State = ""
 						asset.Status = "enabled"
 						asset.Exchange = "crex24"
 
-						if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(asset), reflect.ValueOf(asset)); len(sqlParams) > 0 {
-							if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-								log.Println(err.Error())
-							}
+						if err := utils.SqlDB.Model(&asset).Create(&asset).Error; err != nil {
+							log.Println(err.Error())
 						}
 					}
 
@@ -221,6 +213,7 @@ func crex24AssetStream() {
 					}
 
 					updateAsset(asset)
+					go saveAsset(asset)
 				}
 
 			}

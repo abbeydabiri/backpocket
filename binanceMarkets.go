@@ -1,23 +1,26 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
 	chanRestartBinanceOHLCVMarketStream = make(chan bool, 10)
 )
 
-func binanceMarketGet(wg *sync.WaitGroup) {
+func binanceGetExistingMarkets(wg *sync.WaitGroup) {
 	lFirstRun := true
 	for {
 		httpClient := http.Client{Timeout: time.Duration(time.Second * 5)}
@@ -56,104 +59,92 @@ func binanceMarketGet(wg *sync.WaitGroup) {
 			return
 		}
 
-		sqlBatchMarkets := []markets{}
-		// sqlBatchInsert := `insert into markets (id,pair,status,exchange,numoftrades,closed,baseasset,quoteasset,takeprofit,stoploss,minnotional,minqty,maxqty,stepsize,minprice,maxprice,ticksize,open,close,high,low,volume,volumequote,lastprice,price,upperband,middleband,lowerband,firstbid,secondbid,lastbid,firstask,secondask,lastask,bidqty,bidprice,askqty,askprice,pricechange,pricechangepercent,highprice,lowprice)
-		// values (:id, :pair, :status, :exchange, :num_of_trades, :closed, :base_asset, :quote_asset  ,:take_profit, :stop_loss, :min_notional, :min_qty, :max_qty, :step_size, :min_price, :max_price, :tick_size, :open, :close, :high, :low, :volume, :volume_quote, :last_price, :price, :upper_band, :middle_band, :lower_band, :first_bid, :second_bid, :last_bid, :first_ask, :second_ask, :last_ask, :bid_qty, :bid_price, :ask_qty, :ask_price, :price_change, :price_change_percent, :high_price, :low_price )`
-		sqlBatchInsert := `insert into markets (id,pair,status,exchange,numoftrades,closed,baseasset,quoteasset,takeprofit,stoploss,minnotional,minqty,maxqty,stepsize,minprice,maxprice,ticksize,open,close,high,low,volume,volumequote,lastprice,price,upperband,middleband,lowerband,firstbid,secondbid,lastbid,firstask,secondask,lastask,bidqty,bidprice,askqty,askprice,pricechange,pricechangepercent,highprice,lowprice)
-		values (:id, :pair, :status, :exchange, :numoftrades, :closed, :baseasset, :quoteasset  ,:takeprofit, :stoploss, :minnotional, :minqty, :maxqty, :stepsize, :minprice, :maxprice, :ticksize, :open, :close, :high, :low, :volume, :volumequote, :lastprice, :price, :upperband, :middleband, :lowerband, :firstbid, :secondbid, :lastbid, :firstask, :secondask, :lastask, :bidqty, :bidprice, :askqty, :askprice, :pricechange, :pricechangepercent, :highprice, :lowprice )`
-
+		newBatchedMarkets := []models.Market{}
 		for _, marketPair := range exchangeInfo.Symbols {
 
 			market := getMarket(marketPair.Symbol, "binance")
 
-			//findkey and create if it does not exist
-			if market.Pair == "" {
-				//this logic adds a new marketpair
-				market.Pair = marketPair.Symbol
-				market.Status = "disabled"
-				market.Exchange = "binance"
+			//this logic adds a new marketpair
+			market.Pair = marketPair.Symbol
+			market.Status = "disabled"
+			market.Exchange = "binance"
 
-				switch marketPair.Symbol {
-				case "BNBUSDT":
-					market.Status = "enabled"
-				}
+			switch marketPair.Symbol {
+			case "BNBUSDT":
+				market.Status = "enabled"
+			}
 
-				market.BaseAsset = marketPair.BaseAsset
-				market.QuoteAsset = marketPair.QuoteAsset
+			market.BaseAsset = marketPair.BaseAsset
+			market.QuoteAsset = marketPair.QuoteAsset
 
-				for _, filter := range marketPair.Filters {
-					switch filter.FilterType {
-					case "MIN_NOTIONAL":
-						var err error
-						if market.MinNotional, err = strconv.ParseFloat(filter.MinNotional, 64); err != nil {
-							log.Println(err.Error())
-						}
+			for _, filter := range marketPair.Filters {
+				switch filter.FilterType {
+				case "MIN_NOTIONAL":
+					var err error
+					if market.MinNotional, err = strconv.ParseFloat(filter.MinNotional, 64); err != nil {
+						log.Println(err.Error())
+					}
 
-					case "LOT_SIZE":
-						var err error
-						if market.MinQty, err = strconv.ParseFloat(filter.MinQty, 64); err != nil {
-							log.Println(err.Error())
-						}
+				case "LOT_SIZE":
+					var err error
+					if market.MinQty, err = strconv.ParseFloat(filter.MinQty, 64); err != nil {
+						log.Println(err.Error())
+					}
 
-						if market.MaxQty, err = strconv.ParseFloat(filter.MaxQty, 64); err != nil {
-							log.Println(err.Error())
-						}
+					if market.MaxQty, err = strconv.ParseFloat(filter.MaxQty, 64); err != nil {
+						log.Println(err.Error())
+					}
 
-						if market.StepSize, err = strconv.ParseFloat(filter.StepSize, 64); err != nil {
-							log.Println(err.Error())
-						}
-					case "PRICE_FILTER":
-						var err error
-						if market.MinPrice, _ = strconv.ParseFloat(filter.MinPrice, 64); err != nil {
-							log.Println(err.Error())
-						}
+					if market.StepSize, err = strconv.ParseFloat(filter.StepSize, 64); err != nil {
+						log.Println(err.Error())
+					}
+				case "PRICE_FILTER":
+					var err error
+					if market.MinPrice, _ = strconv.ParseFloat(filter.MinPrice, 64); err != nil {
+						log.Println(err.Error())
+					}
 
-						if market.MaxPrice, _ = strconv.ParseFloat(filter.MaxPrice, 64); err != nil {
-							log.Println(err.Error())
-						}
+					if market.MaxPrice, _ = strconv.ParseFloat(filter.MaxPrice, 64); err != nil {
+						log.Println(err.Error())
+					}
 
-						if market.TickSize, _ = strconv.ParseFloat(filter.TickSize, 64); err != nil {
-							log.Println(err.Error())
-						}
+					if market.TickSize, _ = strconv.ParseFloat(filter.TickSize, 64); err != nil {
+						log.Println(err.Error())
 					}
 				}
+			}
 
-				if market.Pair != "" {
-					//save market to db
-					if market.ID == 0 {
-						if !lFirstRun {
-							log.Printf("Market is Missing ID after First Run: %+v /n", market)
-						}
-
-						market.ID = sqlTableID()
-						sqlBatchMarkets = append(sqlBatchMarkets, market)
-					}
-					updateMarket(market)
-					wsBroadcastMarket <- market
-					//save market to db
+			if market.ID == 0 {
+				if !lFirstRun {
+					log.Printf("Market is Missing ID after First Run: %+v /n", market)
 				}
+
+				market.ID = models.TableID()
+				market.Createdate = time.Now()
+				market.Updatedate = time.Now()
+				newBatchedMarkets = append(newBatchedMarkets, market)
+			}
+			updateMarket(market)
+		}
+
+		if len(newBatchedMarkets) > 0 {
+			if err := utils.SqlDB.Transaction(func(tx *gorm.DB) error {
+				if err := tx.CreateInBatches(newBatchedMarkets, 500).Error; err != nil {
+					return err //Rollback
+				}
+				return nil
+			}); err != nil {
+				log.Println("Error Creating Batches: ", err.Error())
 			}
 		}
 
 		if lFirstRun {
-			sqlTempBatch := []markets{}
-			for _, market := range sqlBatchMarkets {
-				sqlTempBatch = append(sqlTempBatch, market)
-				if len(sqlTempBatch) == 100 {
-					go func() {
-						if _, err := utils.SqlDB.NamedExec(sqlBatchInsert, sqlTempBatch); err != nil {
-							log.Println("sqlBatchMarkets Error:", err.Error())
-						}
-					}()
-					time.Sleep(time.Millisecond * 200)
-					sqlTempBatch = nil
-				}
-			}
 			wg.Done()
+			lFirstRun = false
+			log.Println("Markets First Run Completed")
 		}
-		lFirstRun = false
 
-		time.Sleep(time.Minute * 5)
+		time.Sleep(time.Hour * 6)
 	}
 }
 
@@ -196,6 +187,7 @@ func binanceMarket24hrTicker() {
 			continue
 		}
 
+		updateBatchedMarkets := []models.Market{}
 		for _, marketPair := range ticker24HRList {
 
 			market := getMarket(marketPair.Symbol, "binance")
@@ -224,21 +216,21 @@ func binanceMarket24hrTicker() {
 						log.Println(err.Error())
 					}
 
-					if market.AskPrice, err = strconv.ParseFloat(marketPair.AskPrice, 64); err != nil {
-						log.Println(err.Error())
-					}
+					// if market.AskPrice, err = strconv.ParseFloat(marketPair.AskPrice, 64); err != nil {
+					// 	log.Println(err.Error())
+					// }
 
-					if market.AskQty, err = strconv.ParseFloat(marketPair.AskQty, 64); err != nil {
-						log.Println(err.Error())
-					}
+					// if market.AskQty, err = strconv.ParseFloat(marketPair.AskQty, 64); err != nil {
+					// 	log.Println(err.Error())
+					// }
 
-					if market.BidPrice, err = strconv.ParseFloat(marketPair.BidPrice, 64); err != nil {
-						log.Println(err.Error())
-					}
+					// if market.BidPrice, err = strconv.ParseFloat(marketPair.BidPrice, 64); err != nil {
+					// 	log.Println(err.Error())
+					// }
 
-					if market.BidQty, err = strconv.ParseFloat(marketPair.BidQty, 64); err != nil {
-						log.Println(err.Error())
-					}
+					// if market.BidQty, err = strconv.ParseFloat(marketPair.BidQty, 64); err != nil {
+					// 	log.Println(err.Error())
+					// }
 
 					if market.Close, err = strconv.ParseFloat(marketPair.LastPrice, 64); err != nil {
 						log.Println(err.Error())
@@ -248,11 +240,46 @@ func binanceMarket24hrTicker() {
 				market.LastPrice = market.Price
 				market.Price = market.Close
 				updateMarket(market)
-
+				wsBroadcastMarket <- market
+				updateBatchedMarkets = append(updateBatchedMarkets, market)
 			}
 		}
-		time.Sleep(time.Second * 10)
+
+		if len(updateBatchedMarkets) > 0 {
+			values := make([]clause.Expr, 0, len(updateBatchedMarkets))
+			for _, market := range updateBatchedMarkets {
+				values = append(values, gorm.Expr("(?::bigint, ?::integer, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision) ", market.ID, market.NumOfTrades, market.Open, market.Close, market.High, market.Low, market.Volume, market.VolumeQuote, market.LastPrice, market.Price, market.UpperBand, market.MiddleBand, market.LowerBand, market.PriceChange, market.PriceChangePercent, market.HighPrice, market.LowPrice))
+			}
+
+			batchedValues := make([]clause.Expr, 0, 250)
+			for i, v := range values {
+				batchedValues = append(batchedValues, v)
+				if (i+1)%250 == 0 {
+					batchedUpdateQueryMarkets(batchedValues)
+					batchedValues = make([]clause.Expr, 0, 250)
+				}
+			}
+
+			if len(batchedValues) > 0 {
+				batchedUpdateQueryMarkets(batchedValues)
+			}
+		}
+
+		time.Sleep(time.Minute * 5)
 	}
+}
+
+func batchedUpdateQueryMarkets(batchedValues []clause.Expr) {
+	valuesExpr := gorm.Expr("?", batchedValues)
+	valuesExpr.WithoutParentheses = true
+
+	if tx := utils.SqlDB.Exec(
+		"UPDATE markets SET numoftrades = tmp.numoftrades, open = tmp.open, close = tmp.close, high = tmp.high, low = tmp.low, volume = tmp.volume, volumequote = tmp.volumequote, lastprice = tmp.lastprice, price = tmp.price, upperband = tmp.upperband, middleband = tmp.middleband, lowerband = tmp.lowerband, pricechange = tmp.pricechange, pricechangepercent = tmp.pricechangepercent, highprice = tmp.highprice, lowprice = tmp.lowprice, updatedate = NOW() FROM (VALUES ?) tmp(id, numoftrades, open, close, high, low, volume, volumequote, lastprice, price, upperband, middleband, lowerband, pricechange, pricechangepercent, highprice, lowprice) WHERE markets.id = tmp.id",
+		valuesExpr,
+	); tx.Error != nil {
+		log.Printf("Error Creating Batches: %+v \n", tx.Error)
+	}
+	time.Sleep(time.Millisecond * 100)
 }
 
 func binanceMarketOHLCVStream() {
@@ -372,30 +399,9 @@ func binanceMarketOHLCVStream() {
 		// }
 
 		if wsResp.Data.Kline.Closed {
-			updateFields := map[string]bool{
-				// "low": true, "open": true, "high": true, "close": true, "volume": true, "volumequote": true, "closed": true,
 
-				"numoftrades": true, "closed": true,
-				"minqty": true, "maxqty": true, "stepsize": true,
-				"minprice": true, "maxprice": true, "ticksize": true,
-
-				"open": true, "close": true, "high": true, "low": true,
-				"volume": true, "volumequote": true,
-				"lastprice": true, "price": true,
-
-				"upperband": true, "middleband": true, "lowerband": true,
-
-				"firstbid": true, "secondbid": true, "lastbid": true,
-				"firstask": true, "secondask": true, "lastask": true,
-				"bidqty": true, "bidprice": true,
-				"askqty": true, "askprice": true,
-
-				"pricechange": true, "pricechangepercent": true,
-				"highprice": true, "lowprice": true,
-			}
-
-			if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(market), reflect.ValueOf(market), updateFields); len(sqlParams) > 0 {
-				utils.SqlDB.Exec(sqlQuery, sqlParams...)
+			if err := utils.SqlDB.Model(&market).Where("pair = ? and exchange = ?", market.Pair, market.Exchange).Updates(&market).Error; err != nil {
+				log.Println(err.Error())
 			}
 		}
 
