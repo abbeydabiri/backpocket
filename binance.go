@@ -20,7 +20,7 @@ const (
 	binanceRestURL      = "https://api.binance.com/api/v3"
 	binanceWebsocketURL = "wss://stream.binance.com:9443/stream?streams="
 
-	binanceListOrdersParams  = "symbol=%s"
+	binanceListOrdersParams  = "symbol=%s&startTime=%v&limit=1000"
 	binanceOrderQueryParams  = "symbol=%s&orderId=%d"
 	binanceOrderCancelParams = "symbol=%s&orderId=%d"
 	binanceOrderCreateParams = "type=LIMIT&timeInForce=GTC&symbol=%s&side=%s&price=%s&quantity=%s"
