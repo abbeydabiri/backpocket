@@ -52,14 +52,6 @@ func (model *Order) BeforeCreate(tx *gorm.DB) error {
 		return errors.New("Price is required")
 	}
 
-	if model.Quantity == 0 {
-		return errors.New("Quantity is required")
-	}
-
-	if model.Total == 0 {
-		return errors.New("Total is required")
-	}
-
 	return nil
 }
 
