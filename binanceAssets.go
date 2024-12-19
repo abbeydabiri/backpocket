@@ -165,6 +165,20 @@ func binanceAssetStream() {
 		log.Println("err ", err.Error())
 	}
 
+	//make an http get call to binanceRestURL every 30 minutes to keep the stream alive
+	go func() {
+		httpClient := http.Client{Timeout: time.Duration(time.Second * 30)}
+		httpRequest, _ := http.NewRequest("PUT", binanceRestURL+"/time", nil)
+		httpRequest.Header.Set("X-MBX-API", binanceAPIKey)
+		for {
+			time.Sleep(time.Minute * 20)
+			if _, err := httpClient.Do(httpRequest); err != nil {
+				log.Println(err.Error())
+				return
+			}
+		}
+	}()
+
 	//loop through and read all messages received
 	for {
 		select {

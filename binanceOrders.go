@@ -150,6 +150,7 @@ func binanceOrderCreate(pair, side, price, quantity string, stoploss, takeprofit
 	}
 
 	if newOrder.OrderID == 0 {
+		log.Println("New Order not found in OrderList, check if binance sent an executionReport response on the websocket")
 		return
 	}
 
