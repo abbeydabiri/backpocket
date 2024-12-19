@@ -42,10 +42,10 @@ type binanceOrderType struct {
 // }
 // }
 
-func binanceAllOrders(pair string) {
-	queryParams := fmt.Sprintf(binanceListOrdersParams, pair)
+func binanceAllOrders(pair string, starttime int64) {
+	queryParams := fmt.Sprintf(binanceListOrdersParams, pair, starttime)
 	respBytes := binanceRestAPI("GET", binanceRestURL+"/allOrders?", queryParams)
-
+	log.Println(queryParams)
 	var binanceOrderList []binanceOrderType
 	json.Unmarshal(respBytes, &binanceOrderList)
 
@@ -63,9 +63,12 @@ func binanceAllOrders(pair string) {
 		}
 	}
 
+	log.Printf("len(newBatchedOrders): %v \n", len(newBatchedOrders))
+	log.Printf("len(updateBatchedOrders): %v \n", len(updateBatchedOrders))
+
 	if len(newBatchedOrders) > 0 {
 		if err := utils.SqlDB.Transaction(func(tx *gorm.DB) error {
-			if err := tx.CreateInBatches(newBatchedOrders, 500).Error; err != nil {
+			if err := tx.CreateInBatches(newBatchedOrders, len(newBatchedOrders)).Error; err != nil {
 				return err //Rollback
 			}
 			return nil

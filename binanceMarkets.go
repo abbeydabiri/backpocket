@@ -66,12 +66,15 @@ func binanceGetExistingMarkets(wg *sync.WaitGroup) {
 
 			//this logic adds a new marketpair
 			market.Pair = marketPair.Symbol
-			market.Status = "disabled"
-			market.Exchange = "binance"
 
-			switch marketPair.Symbol {
-			case "BNBUSDT":
-				market.Status = "enabled"
+			market.Exchange = "binance"
+			if market.ID == 0 {
+				market.Status = "disabled"
+			} else {
+				switch marketPair.Symbol {
+				case "BNBUSDT":
+					market.Status = "enabled"
+				}
 			}
 
 			market.BaseAsset = marketPair.BaseAsset

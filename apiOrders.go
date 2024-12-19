@@ -100,7 +100,13 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				// go func() { //not needed as this causes race errors and data upate issues
 				switch msg.Order.Exchange {
 				default:
-					binanceAllOrders(msg.Order.Pair)
+					//convert msg.Start to a valid time.Time
+					startTime, err := time.Parse("2006-01-02 15:04:05", msg.Start)
+					if startTime.IsZero() || err != nil {
+						startTime = time.Now().AddDate(0, -3, 0) //go back 3 months by default
+					}
+					startTimeStamp := startTime.UnixNano() / int64(time.Millisecond)
+					binanceAllOrders(msg.Order.Pair, startTimeStamp)
 				case "crex24":
 					crex24AllOrders(msg.Order.Pair)
 				}
@@ -177,9 +183,9 @@ func updateOrderAndSave(order models.Order, save bool) {
 
 	orderKey := 0
 	orderListMapMutex.RLock()
-	for orderID, orderListIndex := range orderListMap {
+	for orderID, key := range orderListMap {
 		if orderID == fmt.Sprintf("%v-%s", order.OrderID, strings.ToLower(order.Exchange)) {
-			orderKey = orderListIndex
+			orderKey = key
 		}
 	}
 	orderListMapMutex.RUnlock()
