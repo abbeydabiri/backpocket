@@ -45,7 +45,7 @@ type binanceOrderType struct {
 func binanceAllOrders(pair string, starttime int64) {
 	queryParams := fmt.Sprintf(binanceListOrdersParams, pair, starttime)
 	respBytes := binanceRestAPI("GET", binanceRestURL+"/allOrders?", queryParams)
-	log.Println(queryParams)
+
 	var binanceOrderList []binanceOrderType
 	json.Unmarshal(respBytes, &binanceOrderList)
 
@@ -55,25 +55,26 @@ func binanceAllOrders(pair string, starttime int64) {
 		if binanceOrder.Symbol == "" {
 			continue
 		}
-		order := binanceUpdateOrder(binanceOrder)
-		if order.ID > 0 {
-			updateBatchedOrders = append(updateBatchedOrders, order)
-		} else {
+		order, isnew := binanceUpdateOrder(binanceOrder)
+		if isnew {
 			newBatchedOrders = append(newBatchedOrders, order)
+		} else {
+			updateBatchedOrders = append(updateBatchedOrders, order)
 		}
 	}
 
-	log.Printf("len(newBatchedOrders): %v \n", len(newBatchedOrders))
-	log.Printf("len(updateBatchedOrders): %v \n", len(updateBatchedOrders))
+	// log.Printf("len(newBatchedOrders): %s %v \n", pair, len(newBatchedOrders))
+	// log.Printf("len(updateBatchedOrders): %s %v \n", pair, len(updateBatchedOrders))
 
 	if len(newBatchedOrders) > 0 {
 		if err := utils.SqlDB.Transaction(func(tx *gorm.DB) error {
-			if err := tx.CreateInBatches(newBatchedOrders, len(newBatchedOrders)).Error; err != nil {
+			if err := tx.CreateInBatches(newBatchedOrders, 500).Error; err != nil {
 				return err //Rollback
 			}
 			return nil
 		}); err != nil {
 			log.Println("Error Creating Batches: ", err.Error())
+			log.Printf("newBatchedOrders: %+v \n", newBatchedOrders)
 		}
 	}
 
@@ -186,12 +187,14 @@ func binanceOrderCancel(pair string, orderid uint64) {
 	updateOrderAndSave(cancelledOrder, true)
 }
 
-func binanceUpdateOrder(binanceOrder binanceOrderType) (order models.Order) {
+func binanceUpdateOrder(binanceOrder binanceOrderType) (order models.Order, isnew bool) {
 
 	order = getOrder(binanceOrder.OrderID, "binance")
 
 	order.Exchange = "binance"
-	if !(order.ID > 0) {
+	if !(order.OrderID > 0) {
+		isnew = true
+		order.ID = models.TableID()
 		order.Side = binanceOrder.Side
 		order.Pair = binanceOrder.Symbol
 		order.OrderID = binanceOrder.OrderID
@@ -236,6 +239,6 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) (order models.Order) {
 		}
 	}
 
-	updateOrderAndSave(order, false)
+	go updateOrderAndSave(order, false)
 	return
 }

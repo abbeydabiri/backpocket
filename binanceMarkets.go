@@ -254,12 +254,12 @@ func binanceMarket24hrTicker() {
 				values = append(values, gorm.Expr("(?::bigint, ?::integer, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision, ?::double precision) ", market.ID, market.NumOfTrades, market.Open, market.Close, market.High, market.Low, market.Volume, market.VolumeQuote, market.LastPrice, market.Price, market.UpperBand, market.MiddleBand, market.LowerBand, market.PriceChange, market.PriceChangePercent, market.HighPrice, market.LowPrice))
 			}
 
-			batchedValues := make([]clause.Expr, 0, 250)
+			batchedValues := make([]clause.Expr, 0, 500)
 			for i, v := range values {
 				batchedValues = append(batchedValues, v)
-				if (i+1)%250 == 0 {
+				if (i+1)%500 == 0 {
 					batchedUpdateQueryMarkets(batchedValues)
-					batchedValues = make([]clause.Expr, 0, 250)
+					batchedValues = make([]clause.Expr, 0, 500)
 				}
 			}
 

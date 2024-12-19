@@ -20,6 +20,8 @@ var (
 	orderList    []models.Order
 	orderListMap = make(map[string]int)
 
+	orderListFetchMutex = sync.RWMutex{}
+
 	orderListMutex    = sync.RWMutex{}
 	orderListMapMutex = sync.RWMutex{}
 	wsConnOrdersMutex = sync.RWMutex{}
@@ -97,20 +99,20 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				default:
 				}
 
-				// go func() { //not needed as this causes race errors and data upate issues
-				switch msg.Order.Exchange {
-				default:
-					//convert msg.Start to a valid time.Time
-					startTime, err := time.Parse("2006-01-02 15:04:05", msg.Start)
-					if startTime.IsZero() || err != nil {
-						startTime = time.Now().AddDate(0, -3, 0) //go back 3 months by default
+				go func() { //not needed as this causes race errors and data upate issues
+					switch msg.Order.Exchange {
+					default:
+						//convert msg.Start to a valid time.Time
+						startTime, err := time.Parse("2006-01-02 15:04:05", msg.Start)
+						if startTime.IsZero() || err != nil {
+							startTime = time.Now().AddDate(0, -3, 0) //go back 3 months by default
+						}
+						startTimeStamp := startTime.UnixNano() / int64(time.Millisecond)
+						binanceAllOrders(msg.Order.Pair, startTimeStamp)
+					case "crex24":
+						crex24AllOrders(msg.Order.Pair)
 					}
-					startTimeStamp := startTime.UnixNano() / int64(time.Millisecond)
-					binanceAllOrders(msg.Order.Pair, startTimeStamp)
-				case "crex24":
-					crex24AllOrders(msg.Order.Pair)
-				}
-				// }() //not needed as this causes race errors and data upate issues
+				}() //not needed as this causes race errors and data upate issues
 
 			case "query":
 				switch msg.Order.Exchange {
