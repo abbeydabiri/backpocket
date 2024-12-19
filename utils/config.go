@@ -8,16 +8,22 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 	"unicode"
 
-	"github.com/jmoiron/sqlx"
-	//needed for postgresql
-	_ "github.com/lib/pq"
-	//needed for sqlite
-	_ "github.com/mattn/go-sqlite3"
+	// "github.com/jmoiron/sqlx"
+	// //needed for postgresql
+	// _ "github.com/lib/pq"
+	// //needed for sqlite
+	// _ "github.com/mattn/go-sqlite3"
 
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/nacl/secretbox"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"backpocket/models"
 )
 
 const (
@@ -47,7 +53,7 @@ type configType struct {
 // Config to be exported globally
 var (
 	Config configType
-	SqlDB  *sqlx.DB
+	SqlDB  *gorm.DB
 )
 
 // Init ...
@@ -116,15 +122,27 @@ func ConnectDB() {
 	postgresConn = fmt.Sprintf(postgresConn, Config.dbConfig["hostname"], Config.dbConfig["port"],
 		Config.dbConfig["database"], Config.dbConfig["username"], Config.dbConfig["password"], Config.dbConfig["sslmode"])
 
-	if SqlDB, err = sqlx.Open("postgres", postgresConn); err != nil {
+	if SqlDB, err = gorm.Open(postgres.Open(postgresConn)); err != nil {
 		log.Panicf("error opening database file %v \n", err)
 	}
-	//SQL Connection for POSTGRES
 
-	//SQL Connection for SQLITE
-	// if SqlDB, err = sqlx.Open("sqlite3", "backpocket.db"); err != nil {
-	// 	log.Panicf("error opening database file %v \n", err)
-	// }
+	db, err := SqlDB.DB()
+	if err != nil {
+		log.Panicf("Failed to open sql database! ERROR: %v", err)
+	}
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(100)
+	db.SetConnMaxLifetime(time.Hour)
+
+	var modelsList []interface{}
+	modelsList = append(modelsList, &models.Asset{})
+	modelsList = append(modelsList, &models.Order{})
+	modelsList = append(modelsList, &models.Market{})
+
+	if err := SqlDB.AutoMigrate(modelsList...); err != nil {
+		log.Panicf("Error migrating database: %v", err)
+	}
+
 }
 
 // Encrypt ...

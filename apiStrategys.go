@@ -1,96 +1,24 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
 	"fmt"
 	"log"
 	"math"
-	"net/http"
 	"strconv"
-	"strings"
 	"sync"
-	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 var (
-	strategyList    []strategys
-	strategyListMap = make(map[string]int)
-
 	marketRSIBands = make(map[string][]float64)
 	bollingerBands = make(map[string][]float64)
 
 	marketRSIBandsMutex = sync.RWMutex{}
 	bollingerBandsMutex = sync.RWMutex{}
 
-	strategyListMutex    = sync.RWMutex{}
-	strategyListMapMutex = sync.RWMutex{}
-	wsConnStrategysMutex = sync.RWMutex{}
-
-	wsConnStrategys     = make(map[*websocket.Conn]bool)
-	wsBroadcastStrategy = make(chan interface{}, 10240)
-
 	chanStoplossTakeProfit = make(chan orderbooks, 10240)
 )
-
-type strategys struct {
-	ID       uint64 `sql:"index"`
-	Status   string `sql:"index"`
-	Exchange string `sql:"index"`
-	Percent  float64
-	Symbol   string `sql:"index"`
-
-	// Account     string `sql:"unique index"`
-}
-
-func wsHandlerStrategys(httpRes http.ResponseWriter, httpReq *http.Request) {
-	if wsConn := wsHandleConnections(httpRes, httpReq); wsConn != nil {
-
-		wsConn.SetPongHandler(func(string) error {
-			wsConn.SetReadDeadline(time.Now().Add(pongWait))
-			return nil
-		})
-
-		wsConnStrategysMutex.Lock()
-		wsConnStrategys[wsConn] = true
-		wsConnStrategysMutex.Unlock()
-
-	}
-}
-
-func wsHandlerStrategyBroadcast() {
-	go func() {
-		ticker := time.NewTicker(pingPeriod)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			wsConnStrategysMutex.Lock()
-			for wsConn := range wsConnStrategys {
-				if err := wsConn.WriteMessage(websocket.PingMessage, nil); err != nil {
-					delete(wsConnStrategys, wsConn)
-					wsConn.Close()
-				}
-			}
-			wsConnStrategysMutex.Unlock()
-		}
-	}()
-
-	go func() {
-
-		for strategy := range wsBroadcastStrategy {
-			wsConnStrategysMutex.Lock()
-			for wsConn := range wsConnStrategys {
-				if err := wsConn.WriteJSON(strategy); err != nil {
-					delete(wsConnStrategys, wsConn)
-					wsConn.Close()
-				}
-			}
-			wsConnStrategysMutex.Unlock()
-
-		}
-	}()
-}
 
 func apiStrategyStopLossTakeProfit() {
 
@@ -119,7 +47,7 @@ func apiStrategyStopLossTakeProfit() {
 			continue
 		}
 
-		var oldOrderList []orders
+		var oldOrderList []models.Order
 		var oldPriceList []float64
 
 		//do a mutex RLock loop through orders
@@ -265,9 +193,9 @@ func apiStrategyStopLossTakeProfit() {
 		orderListMutex.RUnlock()
 
 		for keyID, oldOrder := range oldOrderList {
-			updateOrder(oldOrder)
+			updateOrderAndSave(oldOrder, true)
 
-			newOrder := orders{}
+			newOrder := models.Order{}
 			newOrder.Pair = oldOrder.Pair
 			newOrder.Side = oldOrder.RefSide
 			newOrder.AutoRepeat = oldOrder.AutoRepeat
@@ -300,7 +228,7 @@ func apiStrategyStopLossTakeProfit() {
 	}
 }
 
-func calculateRSIBands(market *markets) {
+func calculateRSIBands(market *models.Market) {
 
 	marketRSIBandsMutex.RLock()
 	rsiBands := marketRSIBands[market.Pair]
@@ -329,7 +257,7 @@ func calculateRSIBands(market *markets) {
 	//calculate RSI
 }
 
-func calculateBollingerBands(market *markets) {
+func calculateBollingerBands(market *models.Market) {
 
 	bollingerBandsMutex.RLock()
 	marketBands := bollingerBands[market.Pair]
@@ -361,38 +289,4 @@ func calculateBollingerBands(market *markets) {
 
 	market.UpperBand = market.MiddleBand + (2 * sumAverageCloseSquared)
 	market.LowerBand = market.MiddleBand - (2 * sumAverageCloseSquared)
-
-}
-
-func dbStupStrategys() {
-
-	// tablename := ""
-	// sqlTable := "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
-	// //create tables if they are missing
-	// if utils.SqlDB.Get(&tablename, sqlTable, "strategys"); tablename == "" {
-	// 	if reflectType := reflect.TypeOf(strategys{}); !sqlTableCreate(reflectType) {
-	// 		log.Panicf("Table creation failed for table [%s] \n", reflectType.Name())
-	// 	}
-
-	// 	var defaultStrategys []strategys
-	// 	defaultStrategys = append(defaultStrategys, strategys{Symbol: "BTC", Percent: 50, Status: "enabled", Exchange: "binance"})
-	// 	defaultStrategys = append(defaultStrategys, strategys{Symbol: "ETH", Percent: 50, Status: "enabled", Exchange: "binance"})
-
-	// 	for _, strategy := range defaultStrategys {
-	// 		utils.SqlDB.Exec("INSERT INTO strategys (symbol, percent, status, exchange) VALUES (?, ?, ?, ?)",
-	// 			strategy.Symbol, strategy.Percent, strategy.Status, strategy.Exchange)
-	// 	}
-	// 	// <-time.After(time.Second)
-	// }
-
-	strategyListMutex.Lock()
-	utils.SqlDB.Select(&strategyList, "select * from strategys order by status, exchange, symbold")
-	strategyListMutex.Unlock()
-
-	strategyListMapMutex.Lock()
-	strategyListMap = make(map[string]int)
-	for id, strategy := range strategyList {
-		strategyListMap[strings.ToUpper(strategy.Symbol)] = id + 1
-	}
-	strategyListMapMutex.Unlock()
 }

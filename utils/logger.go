@@ -14,7 +14,7 @@ import (
 func RotateLogs(logPath string) {
 	startLogger(logPath)
 	go func() {
-		ticker := time.NewTicker(time.Minute)
+		ticker := time.NewTicker(time.Minute * 10)
 		defer ticker.Stop()
 		for range ticker.C {
 			startLogger(logPath)
@@ -40,9 +40,17 @@ func startLogger(logPath string) {
 	if err != nil {
 		log.Fatalln("Failed to open log file", ":", err)
 	}
+
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 	log.SetOutput(logfile)
-	debug.SetCrashOutput(logfile, debug.CrashOptions{})
+
+	fileName += ".crashlog"
+	WriteFile(fileName, filePath, []byte(``))
+	crashlogfile, err := os.OpenFile(filePath+fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	if err != nil {
+		log.Fatalln("Failed to open log file", ":", err)
+	}
+	debug.SetCrashOutput(crashlogfile, debug.CrashOptions{})
 }
 
 // WriteFile ...

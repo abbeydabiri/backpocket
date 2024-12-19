@@ -44,20 +44,14 @@ func main() {
 
 	// OrderBook = orderbook.NewOrderBook()
 	utils.RotateLogs("")
-	sqlDBInit()
+	utils.Init(nil)
 
 	// crex24Keys()
 	binanceKeys()
 
-	// println(ETHNewMnemonic())
-
-	dbSetupAssets()
-	dbSetupOrders()
-	dbSetupMarkets()
-
-	// //crex24MarketGet()  //this setups up the markets for trading
-	//this setups up the markets for trading
-	// dbSetupMarkets()
+	LoadAssetsFromDB()
+	LoadOrdersFromDB()
+	LoadMarketsFromDB()
 
 	muxRouter := mux.NewRouter()
 
@@ -84,15 +78,14 @@ func main() {
 	go apiStrategyStopLossTakeProfit()
 
 	go binanceAssetGet()
-
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
-	go binanceMarketGet(&wg)
+	go binanceGetExistingMarkets(&wg)
 	wg.Wait()
 	go binanceAssetStream()
 
-	go binanceTradeStream() //disabled due to data overflooding
+	// go binanceTradeStream() //disabled due to data overflooding
 	go binanceOrderBookStream()
 	go binanceMarket24hrTicker()
 	go binanceMarketOHLCVStream()

@@ -1,11 +1,11 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	assetList    []assets
+	assetList    []models.Asset
 	assetListMap = make(map[string]int)
 
 	assetListMutex    = sync.RWMutex{}
@@ -22,26 +22,16 @@ var (
 	wsConnAssetsMutex = sync.RWMutex{}
 
 	wsConnAssets     = make(map[*websocket.Conn]bool)
-	wsBroadcastAsset = make(chan interface{}, 10240)
+	wsBroadcastAsset = make(chan *wsResponseType, 10240)
 )
 
-type assets struct {
-	ID       uint64 `sql:"index"`
-	Symbol   string `sql:"index"`
-	Status   string `sql:"index"`
-	Exchange string `sql:"index"`
-	State    string `sql:"index"` //buy or sell
-	Address  string `sql:"index"`
-	Free     float64
-	Locked   float64
-}
-
-func getAsset(symbol, assetExchange string) (asset assets) {
+func getAsset(symbol, assetExchange string) (asset models.Asset) {
 	assetKey := 0
 	assetListMapMutex.RLock()
 	for assetID, assetListIndex := range assetListMap {
 		if assetID == fmt.Sprintf("%s-%s", symbol, strings.ToLower(assetExchange)) {
 			assetKey = assetListIndex
+			break
 		}
 	}
 	assetListMapMutex.RUnlock()
@@ -63,7 +53,7 @@ func wsHandlerAssets(httpRes http.ResponseWriter, httpReq *http.Request) {
 			return nil
 		})
 
-		var filteredAssetList []assets
+		var filteredAssetList []models.Asset
 		assetListMutex.RLock()
 		for _, asset := range assetList {
 			// if asset.Free > 0 || asset.Locked > 0 {
@@ -98,27 +88,25 @@ func wsHandlerAssets(httpRes http.ResponseWriter, httpReq *http.Request) {
 				continue
 			}
 
-			//select from sqlitedb into array of orders
-			var sqlParams []interface{}
-			sqlSearch := "select * from assets where "
+			var searchText string
+			var searchParams []interface{}
 
-			sqlParams = append(sqlParams, "%"+msgReq.Symbol+"%")
-			sqlSearch += fmt.Sprintf(" and symbol like $%v ", len(sqlParams))
+			searchText = "symbol = ?"
+			searchParams = append(searchParams, msgReq.Symbol)
 
 			if msgReq.Exchange != "" {
-				sqlParams = append(sqlParams, "%"+msgReq.Exchange+"%")
-				sqlSearch += fmt.Sprintf(" and exchange like $%v ", len(sqlParams))
+				searchText += " AND exchange = ?"
+				searchParams = append(searchParams, msgReq.Exchange)
 			}
-			sqlSearch += " order by symbol, exchange"
+			orderby := "symbol, exchange"
 
-			var resListAssets []assets
-			if err := utils.SqlDB.Select(&resListAssets, sqlSearch, sqlParams...); err != nil {
-				log.Println(sqlSearch, sqlParams)
+			var foundAssets []models.Asset
+			if err := utils.SqlDB.Where(searchText, searchParams...).Order(orderby).Find(&foundAssets).Error; err != nil {
 				log.Println(err.Error())
 			}
 
 			wsConnAssetsMutex.Lock()
-			if err := wsConn.WriteJSON(&wsResponseType{Action: "searchresult", Result: resListAssets}); err != nil {
+			if err := wsConn.WriteJSON(&wsResponseType{Action: "searchresult", Result: foundAssets}); err != nil {
 				log.Println(err.Error())
 				return
 			}
@@ -127,6 +115,7 @@ func wsHandlerAssets(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 	}
 }
+
 func wsHandlerAssetBroadcast() {
 	go func() {
 		ticker := time.NewTicker(pingPeriod)
@@ -158,7 +147,7 @@ func wsHandlerAssetBroadcast() {
 	}()
 }
 
-func updateAsset(asset assets) {
+func updateAsset(asset models.Asset) {
 	if asset.Symbol == "" {
 		return
 	}
@@ -175,14 +164,13 @@ func updateAsset(asset assets) {
 	assetListMapMutex.RUnlock()
 
 	if symbolKey == 0 {
-
 		assetListMutex.Lock()
 		assetList = append(assetList, asset)
 		symbolKey = len(assetList)
 		assetListMutex.Unlock()
 
 		assetListMapMutex.Lock()
-		assetListMap[asset.Symbol] = symbolKey
+		assetListMap[fmt.Sprintf("%s-%s", asset.Symbol, strings.ToLower(asset.Exchange))] = symbolKey
 		assetListMapMutex.Unlock()
 
 	} else {
@@ -192,44 +180,25 @@ func updateAsset(asset assets) {
 	}
 
 	select {
-	case wsBroadcastAsset <- &wsResponseType{Action: "balanceupdate", Result: []assets{asset}}:
+	case wsBroadcastAsset <- &wsResponseType{Action: "balanceupdate", Result: []models.Asset{asset}}:
 	default:
-	}
-
-	updateFields := map[string]bool{"free": true, "locked": true}
-	if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(asset), reflect.ValueOf(asset), updateFields); len(sqlParams) > 0 {
-		if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-			log.Println(sqlQuery)
-			log.Println(err.Error())
-		}
-
 	}
 }
 
-func dbSetupAssets() {
-
-	// tablename := ""
-	// reflectType := reflect.TypeOf(assets{})
-	// sqlTable := "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
-	// if utils.SqlDB.Get(&tablename, sqlTable, "assets"); tablename == "" {
-	// 	if !sqlTableCreate(reflectType) { //create table if it is missing
-	// 		log.Panicf("Table creation failed for table [%s] \n", reflectType.Name())
-	// 	}
-	// }
-
-	assetListMutex.Lock()
-	// assetList = nil
-	err := utils.SqlDB.Select(&assetList, "select * from assets order by symbol, exchange")
-	if err != nil {
+func saveAsset(asset models.Asset) {
+	if err := utils.SqlDB.Model(&asset).Where("symbol = ? and exchange = ?", asset.Symbol, asset.Exchange).Updates(map[string]interface{}{"free": asset.Free, "locked": asset.Locked, "status": asset.Status}).Error; err != nil {
 		log.Println(err.Error())
 	}
-	assetListMutex.Unlock()
+}
 
-	assetListMapMutex.Lock()
-	assetListMap = make(map[string]int)
-	for symbolKey, asset := range assetList {
-		assetListMap[fmt.Sprintf("%s-%s", asset.Symbol, strings.ToLower(asset.Exchange))] = symbolKey + 1
+func LoadAssetsFromDB() {
+	var assets []models.Asset
+	if err := utils.SqlDB.Find(&assets).Order("symbol, exchange").Error; err != nil {
+		log.Println(err.Error())
+		return
 	}
-	assetListMapMutex.Unlock()
 
+	for _, asset := range assets {
+		updateAsset(asset)
+	}
 }

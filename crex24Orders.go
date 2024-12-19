@@ -1,11 +1,11 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"time"
 )
 
@@ -86,8 +86,8 @@ func crex24OrderQuery(orderid uint64) {
 	}
 
 	newOrder.Status = crex24Order.Status
-	newOrder.Updated, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
-	updateOrder(newOrder)
+	newOrder.Updatedate, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
+	updateOrderAndSave(newOrder, true)
 
 	crex24CheckError(respBytes)
 
@@ -106,7 +106,7 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 
 	//--> New Order being created -
 	if crex24Order.ID > 0 {
-		order := orders{}
+		order := models.Order{}
 		order.Exchange = "crex24"
 		order.Stoploss = stoploss
 		order.Takeprofit = takeprofit
@@ -117,21 +117,16 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 		order.OrderID = crex24Order.ID
 		order.Pair = crex24Order.Instrument
 		order.Status = crex24Order.Status
-		order.Created, _ = time.Parse(utils.TimeFormat, crex24Order.Timestamp)
+		order.Createdate, _ = time.Parse(utils.TimeFormat, crex24Order.Timestamp)
 
 		order.Price = crex24Order.Price
 		order.Quantity = crex24Order.Volume
 
 		order.Total = order.Price * order.Quantity
 
-		order.ID = sqlTableID()
-		ordersTableMutex.Lock()
-		if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(order), reflect.ValueOf(order)); len(sqlParams) > 0 {
-			if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-				log.Println(err.Error())
-			}
+		if err := utils.SqlDB.Model(&order).Create(&order).Error; err != nil {
+			log.Println(err.Error())
 		}
-		ordersTableMutex.Unlock()
 
 		wsBroadcastNotification <- notifications{
 			Title:   "*Crex24 Exchange*",
@@ -154,8 +149,9 @@ func crex24OrderCreate(pair, side string, price, quantity, stoploss, takeprofit 
 
 	newOrder.RefOrderID = uint64(reforderid)
 
-	updateOrder(prvOrder)
-	updateOrder(newOrder)
+	updateOrderAndSave(prvOrder, true)
+
+	updateOrderAndSave(newOrder, true)
 }
 
 func crex24OrderCancel(orderid uint64) {
@@ -170,8 +166,8 @@ func crex24OrderCancel(orderid uint64) {
 
 	cancelledOrder := getOrder(crex24Order.ID, "crex24")
 	cancelledOrder.Status = crex24Order.Status
-	cancelledOrder.Updated, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
-	updateOrder(cancelledOrder)
+	cancelledOrder.Updatedate, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
+	updateOrderAndSave(cancelledOrder, true)
 }
 
 func crex24UpdateOrder(crex24Order crex24OrderType) {
@@ -181,34 +177,29 @@ func crex24UpdateOrder(crex24Order crex24OrderType) {
 	}
 
 	order := getOrder(crex24Order.ID, "crex24")
-	sqlCheck := "select * from orders where orderid = $1 and exchange = 'crex24'"
-	utils.SqlDB.Get(&order, sqlCheck, crex24Order.ID)
+	// sqlCheck := "select * from orders where orderid = $1 and exchange = 'crex24'"
+	// utils.SqlDB.Get(&order, sqlCheck, crex24Order.ID)
 
 	order.Exchange = "crex24"
-	if !(order.OrderID > 0) {
+	if !(order.ID > 0) {
 		order.Side = crex24Order.Side
 		order.Pair = crex24Order.Instrument
 		order.OrderID = crex24Order.ID
 		order.Status = crex24Order.Status
-		order.Created, _ = time.Parse(utils.TimeFormat, crex24Order.Timestamp)
+		order.Createdate, _ = time.Parse(utils.TimeFormat, crex24Order.Timestamp)
 
 		order.Price = crex24Order.Price
 		order.Quantity = crex24Order.Volume
 		order.Total = order.Price * order.Quantity
 
-		order.ID = sqlTableID()
-		ordersTableMutex.Lock()
-		if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(order), reflect.ValueOf(order)); len(sqlParams) > 0 {
-			if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-				log.Println(err.Error())
-			}
+		if err := utils.SqlDB.Model(&order).Create(&order).Error; err != nil {
+			log.Println(err.Error())
 		}
-		ordersTableMutex.Unlock()
 
 	} else {
 		order.Status = crex24Order.Status
-		order.Updated, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
+		order.Updatedate, _ = time.Parse(utils.TimeFormat, crex24Order.Lastupdate)
 	}
 
-	updateOrderOnly(order)
+	updateOrderAndSave(order, true)
 }

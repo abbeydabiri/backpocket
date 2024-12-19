@@ -1,16 +1,19 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -41,7 +44,9 @@ func binanceAssetGet() {
 				Asset, Free, Locked string
 			}
 		}
-		// assetList = []assets{}
+
+		newBatchedAssets := []models.Asset{}
+		updateBatchedAssets := []models.Asset{}
 		json.Unmarshal(respBytes, &assetBalances)
 		for _, bal := range assetBalances.Balances {
 
@@ -55,26 +60,72 @@ func binanceAssetGet() {
 			asset.Locked, _ = strconv.ParseFloat(bal.Locked, 64)
 			//findkey and create if it does not exist
 
+			if asset.Free > 0 || asset.Locked > 0 {
+				asset.Status = "enabled"
+			} else {
+				asset.Status = "disabled"
+			}
+
 			if !(asset.ID > 0) {
 				//this logic adds a new asset
-				asset.ID = sqlTableID()
+				asset.ID = models.TableID()
 				asset.Symbol = bal.Asset
 				asset.State = ""
-				asset.Status = "disabled"
 				asset.Exchange = "binance"
 
-				if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(asset), reflect.ValueOf(asset)); len(sqlParams) > 0 {
-					if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-						log.Println(err.Error())
-					}
-				}
+				newBatchedAssets = append(newBatchedAssets, asset)
+			} else {
+				updateBatchedAssets = append(updateBatchedAssets, asset)
 			}
 
 			updateAsset(asset)
 		}
 
+		if len(newBatchedAssets) > 0 {
+			if err := utils.SqlDB.Transaction(func(tx *gorm.DB) error {
+				if err := tx.CreateInBatches(newBatchedAssets, 500).Error; err != nil {
+					return err //Rollback
+				}
+				return nil
+			}); err != nil {
+				log.Println("Error Creating Batches: ", err.Error())
+			}
+		}
+
+		if len(updateBatchedAssets) > 0 {
+			values := make([]clause.Expr, 0, len(updateBatchedAssets))
+			for _, asset := range updateBatchedAssets {
+				values = append(values, gorm.Expr("(?::bigint, ?, ?::double precision, ?::double precision) ", asset.ID, asset.Status, asset.Free, asset.Locked))
+			}
+
+			batchedValues := make([]clause.Expr, 0, 250)
+			for i, v := range values {
+				batchedValues = append(batchedValues, v)
+				if (i+1)%250 == 0 {
+					batchedUpdateQueryAssets(batchedValues)
+					batchedValues = make([]clause.Expr, 0, 250)
+				}
+			}
+
+			if len(batchedValues) > 0 {
+				batchedUpdateQueryAssets(batchedValues)
+			}
+		}
 		time.Sleep(time.Minute * 15)
 	}
+}
+
+func batchedUpdateQueryAssets(batchedValues []clause.Expr) {
+	valuesExpr := gorm.Expr("?", batchedValues)
+	valuesExpr.WithoutParentheses = true
+
+	if tx := utils.SqlDB.Exec(
+		"UPDATE assets SET status = tmp.status, free = tmp.free, locked = tmp.locked, updatedate = NOW() FROM (VALUES ?) tmp(id,status,free,locked) WHERE assets.id = tmp.id",
+		valuesExpr,
+	); tx.Error != nil {
+		log.Printf("Error Creating Batches: %+v \n", tx.Error)
+	}
+	time.Sleep(time.Millisecond * 100)
 }
 
 func binanceAssetStream() {
@@ -158,20 +209,18 @@ func binanceAssetStream() {
 
 			if !(asset.ID > 0) {
 				//this logic adds a new asset
-				asset.ID = sqlTableID()
 				asset.Symbol = wRespBalance.Data.Asset
 				asset.State = ""
 				asset.Status = "enabled"
 				asset.Exchange = "binance"
 
-				if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(asset), reflect.ValueOf(asset)); len(sqlParams) > 0 {
-					if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-						log.Println(err.Error())
-					}
+				if err := utils.SqlDB.Model(&asset).Create(&asset).Error; err != nil {
+					log.Println(err.Error())
 				}
 			}
 			// log.Printf("balanceUpdate asset: %+v \n", asset)
 			updateAsset(asset)
+			go saveAsset(asset)
 			// select {
 			// case wsBroadcastAsset <- &wsResponseType{Action: "balanceupdate", Result: []assets{asset}}:
 			// default:
@@ -196,20 +245,18 @@ func binanceAssetStream() {
 
 				if !(asset.ID > 0) {
 					//this logic adds a new asset
-					asset.ID = sqlTableID()
 					asset.Symbol = bal.Asset
 					asset.State = ""
 					asset.Status = "enabled"
 					asset.Exchange = "binance"
 
-					if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(asset), reflect.ValueOf(asset)); len(sqlParams) > 0 {
-						if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-							log.Println(err.Error())
-						}
+					if err := utils.SqlDB.Model(&asset).Create(&asset).Error; err != nil {
+						log.Println(err.Error())
 					}
 				}
 				// log.Printf("outboundAccountPosition asset: %+v \n", asset)
 				updateAsset(asset)
+				go saveAsset(asset)
 				// select {
 				// case wsBroadcastAsset <- &wsResponseType{Action: "outboundaccountposition", Result: []assets{asset}}:
 				// default:
@@ -229,26 +276,20 @@ func binanceAssetStream() {
 			order := getOrder(wRespOrderupdate.Data.OrderID, "binance")
 
 			order.Exchange = "binance"
-			if !(order.OrderID > 0) {
+			if !(order.ID > 0) {
 				order.Side = wRespOrderupdate.Data.Side
 				order.Pair = wRespOrderupdate.Data.Symbol
 				order.OrderID = wRespOrderupdate.Data.OrderID
 				order.Status = wRespOrderupdate.Data.CurrentOrderStatus
-				order.Created = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
+				order.Createdate = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
 
 				order.Price, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderPrice, 64)
 				order.Quantity, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderQuantity, 64)
 				order.Total = utils.TruncateFloat(order.Price*order.Quantity, 8)
 
-				order.ID = sqlTableID()
-
-				ordersTableMutex.Lock()
-				if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(order), reflect.ValueOf(order)); len(sqlParams) > 0 {
-					if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-						log.Println(err.Error())
-					}
+				if err := utils.SqlDB.Model(&order).Create(&order).Error; err != nil {
+					log.Println(err.Error())
 				}
-				ordersTableMutex.Unlock()
 			} else {
 				order.Status = wRespOrderupdate.Data.CurrentOrderStatus
 				order.Price, _ = strconv.ParseFloat(wRespOrderupdate.Data.LastExecutedPrice, 64)
@@ -261,12 +302,12 @@ func binanceAssetStream() {
 					order.Total = cummulativeQuoteQty
 				}
 
-				order.Updated = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
-				if order.Created.IsZero() {
-					order.Created = order.Updated
+				order.Updatedate = time.Unix(wRespOrderupdate.Data.CreationTime/1000, 0)
+				if order.Createdate.IsZero() {
+					order.Createdate = order.Updatedate
 				}
 			}
-			updateOrder(order)
+			updateOrderAndSave(order, true)
 
 			wsBroadcastNotification <- notifications{
 				Title:   "*Binance Exchange*",

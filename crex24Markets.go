@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -90,12 +89,9 @@ func crex24MarketGet() {
 		market.MinNotional = exchangePair.MinQuoteVolume
 
 		if market.Pair != "" {
-			market.ID = sqlTableID()
-			//save market to db
-			if sqlQuery, sqlParams := sqlTableInsert(reflect.TypeOf(market), reflect.ValueOf(market)); len(sqlParams) > 0 {
-				utils.SqlDB.Exec(sqlQuery, sqlParams...)
+			if err := utils.SqlDB.Model(&market).Create(&market).Error; err != nil {
+				log.Println(err.Error())
 			}
-			//save market to db
 		}
 	}
 }
@@ -152,8 +148,8 @@ func crex24Market24hrTicker() {
 					market.Price = marketPair.Last
 					market.LastPrice = marketPair.Last
 
-					market.AskPrice = marketPair.Ask
-					market.BidPrice = marketPair.Bid
+					// market.AskPrice = marketPair.Ask
+					// market.BidPrice = marketPair.Bid
 				}
 
 				select {
@@ -395,12 +391,9 @@ func crex24MarketOHLCVStream() {
 				}
 
 				if market.Closed == 1 {
-					updateFields := map[string]bool{
-						"low": true, "open": true, "high": true, "close": true, "volume": true, "volumequote": true, "closed": true,
-					}
 
-					if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(market), reflect.ValueOf(market), updateFields); len(sqlParams) > 0 {
-						utils.SqlDB.Exec(sqlQuery, sqlParams...)
+					if err := utils.SqlDB.Model(&market).Where("pair = ? and exchange = ?", market.Pair, market.Exchange).Updates(&market).Error; err != nil {
+						log.Println(err.Error())
 					}
 				}
 			}

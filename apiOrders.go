@@ -1,7 +1,9 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
+
 	"fmt"
 	"log"
 	"net/http"
@@ -15,53 +17,24 @@ import (
 )
 
 var (
-	orderList    []orders
+	orderList    []models.Order
 	orderListMap = make(map[string]int)
 
 	orderListMutex    = sync.RWMutex{}
-	ordersTableMutex  = sync.RWMutex{}
 	orderListMapMutex = sync.RWMutex{}
 	wsConnOrdersMutex = sync.RWMutex{}
 
 	wsConnOrders     = make(map[*websocket.Conn]bool)
-	wsBroadcastOrder = make(chan interface{}, 10240)
+	wsBroadcastOrder = make(chan []models.Order, 10240)
 )
-
-type orders struct {
-	ID       uint64 `sql:"index"`
-	Pair     string `sql:"index"`
-	Status   string `sql:"index"` // (pending|buy|sell|done)
-	Exchange string `sql:"index"`
-
-	Side string `sql:"index"`
-	Type string `sql:"index"`
-
-	OrderID uint64 `sql:"unique index"`
-
-	RefSide      string `sql:"index"`
-	AutoRepeat   int    `sql:"index"`
-	RefTripped   string `sql:"index"`
-	AutoRepeatID uint64 `sql:"index"`
-	RefOrderID   uint64 `sql:"index"`
-	RefEnabled   int    `sql:"index"`
-
-	// ExecutedQty,
-	// ExecutedTotal,
-	Price, Quantity,
-	Total, Stoploss,
-	Takeprofit float64
-
-	Created time.Time `sql:"index"`
-	Updated time.Time `sql:"index"`
-}
 
 type orderMsgType struct {
 	Action, Start,
 	Stop string
-	Order orders
+	Order models.Order
 }
 
-func getOrder(orderID uint64, orderExchange string) (order orders) {
+func getOrder(orderID uint64, orderExchange string) (order models.Order) {
 	orderKey := 0
 	orderListMapMutex.RLock()
 	for mapID, orderListIndex := range orderListMap {
@@ -106,17 +79,17 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 			switch msg.Action {
 			case "refenable":
 				msg.Order.RefEnabled = 1
-				updateOrder(msg.Order)
+				updateOrderAndSave(msg.Order, true)
 
 			case "refdisable":
 				msg.Order.RefEnabled = 0
-				updateOrder(msg.Order)
+				updateOrderAndSave(msg.Order, true)
 
 			case "list":
 				var searchMsg = searchOrderMsgType{
+					Pair:  msg.Order.Pair,
 					Stop:  msg.Stop,
 					Start: msg.Start,
-					Pair:  msg.Order.Pair,
 				}
 				filteredOrderList := searchOrderSQL(searchMsg)
 				select {
@@ -124,14 +97,14 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				default:
 				}
 
-				go func() {
-					switch msg.Order.Exchange {
-					default:
-						binanceAllOrders(msg.Order.Pair)
-					case "crex24":
-						crex24AllOrders(msg.Order.Pair)
-					}
-				}()
+				// go func() { //not needed as this causes race errors and data upate issues
+				switch msg.Order.Exchange {
+				default:
+					binanceAllOrders(msg.Order.Pair)
+				case "crex24":
+					crex24AllOrders(msg.Order.Pair)
+				}
+				// }() //not needed as this causes race errors and data upate issues
 
 			case "query":
 				switch msg.Order.Exchange {
@@ -197,18 +170,9 @@ func wsHandlerOrderBroadcast() {
 	}()
 }
 
-func updateOrder(order orders) {
-	if updateOrderOnly(order) {
-		select {
-		case wsBroadcastOrder <- []orders{order}:
-		default:
-		}
-	}
-}
-
-func updateOrderOnly(order orders) bool {
+func updateOrderAndSave(order models.Order, save bool) {
 	if order.OrderID == 0 {
-		return false
+		return
 	}
 
 	orderKey := 0
@@ -235,48 +199,31 @@ func updateOrderOnly(order orders) bool {
 		orderListMutex.Unlock()
 	}
 
-	updateFields := map[string]bool{
-		"id": true, "pair": true, "status": true, "exchange": true, "side": true, "type": true, "orderid": true,
-		"refside": true, "autorepeat": true, "reftripped": true, "autorepeatid": true, "reforderid": true, "refenabled": true,
-		"price": true, "quantity": true, "total": true, "stoploss": true, "takeprofit": true, "created": true, "updated": true,
-	}
+	if save {
+		go saveOrder(order)
 
-	// go func() {
-	ordersTableMutex.Lock()
-	if sqlQuery, sqlParams := sqlTableUpdate(reflect.TypeOf(order), reflect.ValueOf(order), updateFields); len(sqlParams) > 0 {
-		if _, err := utils.SqlDB.Exec(sqlQuery, sqlParams...); err != nil {
-			log.Println(sqlQuery)
-			log.Println(sqlParams)
-			log.Println(err.Error())
+		select {
+		case wsBroadcastOrder <- []models.Order{order}:
+		default:
 		}
-
 	}
-	ordersTableMutex.Unlock()
-	// }()
 
-	return true
 }
 
-func dbSetupOrders() {
-
-	// tablename := ""
-	// reflectType := reflect.TypeOf(orders{})
-	// sqlTable := "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
-	// if utils.SqlDB.Get(&tablename, sqlTable, "orders"); tablename == "" {
-	// 	if !sqlTableCreate(reflectType) { //create table if it is missing
-	// 		log.Panicf("Table creation failed for table [%s] \n", reflectType.Name())
-	// 	}
-	// }
-
-	orderListMutex.Lock()
-	// orderList = nil
-	utils.SqlDB.Select(&orderList, "select * from orders order by pair, exchange, orderid desc")
-	orderListMutex.Unlock()
-
-	orderListMapMutex.Lock()
-	orderListMap = make(map[string]int)
-	for pairKey, orderPair := range orderList {
-		orderListMap[fmt.Sprintf("%v-%s", orderPair.OrderID, strings.ToLower(orderPair.Exchange))] = pairKey + 1
+func saveOrder(order models.Order) {
+	if err := utils.SqlDB.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(&order).Error; err != nil {
+		log.Println(err.Error())
 	}
-	orderListMapMutex.Unlock()
+}
+
+func LoadOrdersFromDB() {
+	var orders []models.Order
+	if err := utils.SqlDB.Find(&orders).Error; err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	for _, order := range orders {
+		updateOrderAndSave(order, false)
+	}
 }

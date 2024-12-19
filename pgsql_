@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"backpocket/models"
 	"backpocket/utils"
 )
 
@@ -38,7 +39,7 @@ func sqlDBInit() {
 				}
 
 			case "orders":
-				if reflectType := reflect.TypeOf(orders{}); !sqlTableCreate(reflectType) {
+				if reflectType := reflect.TypeOf(models.Order{}); !sqlTableCreate(reflectType) {
 					log.Panicf("Table creation failed for table [%s] \n", reflectType.Name())
 				}
 
