@@ -85,7 +85,7 @@ func main() {
 	wg.Wait()
 	go binanceAssetStream()
 
-	go binanceTradeStream() //disabled due to data overflooding
+	// go binanceTradeStream() //disabled due to not being needed and data overflooding and high cpu usage
 	go binanceOrderBookStream()
 	go binanceMarket24hrTicker()
 	go binanceMarketOHLCVStream()
