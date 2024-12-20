@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"strconv"
 	"sync"
 )
 
@@ -103,20 +102,20 @@ func apiStrategyStopLossTakeProfit() {
 						Use RSI > 70 to confirm overbought conditions.
 				*/
 
-				// if market.Pair == "XRPUSDT" && market.RSI > 0 {
-				// 	fmt.Printf("\n\n\n")
-				// 	fmt.Println("market: ", market.Pair, " - CHECK TO SELL BACK - ",
-				// 		market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70))
-
-				// 	fmt.Println("market.Close >= market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && orderBookBidsBaseTotal < orderBookAsksBaseTotal && market.RSI > float64(70)")
-				// 	fmt.Println(market.Close, " > ", market.UpperBand, " && ", market.Close, " < ", market.Open, " && ", market.Price, " < ", market.LastPrice, " && ", orderBookBidsBaseTotal, " < ", orderBookAsksBaseTotal, " && ", market.RSI, " > ", float64(70))
-				// 	fmt.Println(market.Close >= market.UpperBand, market.Close < market.Open, market.Price < market.LastPrice, orderBookBidsBaseTotal < orderBookAsksBaseTotal, market.RSI > float64(70))
-				// }
-
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float64(3) && market.RSI > float64(65) {
+				// if market.Pair == "XRPUSDT" && market.RSI > 0 {
+				// log.Printf("\n\n\n")
+				// log.Println("market: ", market.Pair, " - CHECK TO SELL BACK - ",
+				// 	market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && (sellPercentDifference > float64(3) || market.RSI > float64(65)))
+
+				// log.Println("market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float64(3) || market.RSI > float64(65)")
+				// log.Println(market.Close, " > ", market.UpperBand, " && ", market.Close, " < ", market.Open, " && ", market.Price, " < ", market.LastPrice, " && (", sellPercentDifference, " > ", float64(3), " || ", market.RSI, " > ", float64(65), ")")
+				// log.Println(market.Close > market.UpperBand, market.Close < market.Open, market.Price < market.LastPrice, sellPercentDifference > float64(3), market.RSI > float64(65))
+				// }
+
+				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && (sellPercentDifference > float64(3) || market.RSI > float64(65)) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -171,7 +170,7 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && buyPercentDifference > float64(3) && market.RSI < float64(35) {
+				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && (buyPercentDifference > float64(3) || market.RSI < float64(35)) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -219,12 +218,12 @@ func apiStrategyStopLossTakeProfit() {
 				}
 			}
 
-			switch newOrder.Exchange {
-			default:
-				binanceOrderCreate(newOrder.Pair, newOrder.Side, strconv.FormatFloat(newOrder.Price, 'f', -1, 64), strconv.FormatFloat(newOrder.Quantity, 'f', -1, 64), newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
-			case "crex24":
-				crex24OrderCreate(newOrder.Pair, newOrder.Side, newOrder.Price, newOrder.Quantity, newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
-			}
+			// switch newOrder.Exchange {
+			// default:
+			// 	binanceOrderCreate(newOrder.Pair, newOrder.Side, strconv.FormatFloat(newOrder.Price, 'f', -1, 64), strconv.FormatFloat(newOrder.Quantity, 'f', -1, 64), newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
+			// case "crex24":
+			// 	crex24OrderCreate(newOrder.Pair, newOrder.Side, newOrder.Price, newOrder.Quantity, newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
+			// }
 		}
 
 	}
