@@ -84,8 +84,12 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				updateOrderAndSave(msg.Order, true)
 
 			case "refdisable":
-				msg.Order.RefEnabled = -1
-				updateOrderAndSave(msg.Order, true)
+				msg.Order.RefEnabled = 0
+				updateOrderAndSave(msg.Order, false)
+				if err := utils.SqlDB.Model(&msg.Order).Where("pair = ? and exchange = ? and orderid = ?", msg.Order.Pair, msg.Order.Exchange, msg.Order.OrderID).Updates(
+					map[string]interface{}{"refenabled": msg.Order.RefEnabled}).Error; err != nil {
+					log.Println(err.Error())
+				}
 
 			case "list":
 				var searchMsg = searchOrderMsgType{
