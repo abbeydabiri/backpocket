@@ -339,6 +339,9 @@ func binanceAssetStream() {
 
 				if executedQty > 0 && order.Status == "CANCELED" {
 					order.Status = "FILLED"
+				}
+
+				if order.Status != "CANCELED" {
 					order.Quantity = executedQty
 					order.Total = cummulativeQuoteQty
 				}
