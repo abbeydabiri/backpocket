@@ -145,6 +145,7 @@ func binanceOrderCreate(pair, side, price, quantity string, stoploss, takeprofit
 	time.Sleep(time.Millisecond * 375)
 	newOrder := getOrder(binanceOrder.OrderID, "binance")
 	if newOrder.OrderID == 0 {
+		log.Println("Delaying Order Query for 2 seconds")
 		time.Sleep(time.Second * 2)
 		newOrder = getOrder(binanceOrder.OrderID, "binance")
 	}
