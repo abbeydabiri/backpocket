@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strconv"
 	"sync"
 )
 
@@ -218,12 +219,12 @@ func apiStrategyStopLossTakeProfit() {
 				}
 			}
 
-			// switch newOrder.Exchange {
-			// default:
-			// 	binanceOrderCreate(newOrder.Pair, newOrder.Side, strconv.FormatFloat(newOrder.Price, 'f', -1, 64), strconv.FormatFloat(newOrder.Quantity, 'f', -1, 64), newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
-			// case "crex24":
-			// 	crex24OrderCreate(newOrder.Pair, newOrder.Side, newOrder.Price, newOrder.Quantity, newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
-			// }
+			switch newOrder.Exchange {
+			default:
+				binanceOrderCreate(newOrder.Pair, newOrder.Side, strconv.FormatFloat(newOrder.Price, 'f', -1, 64), strconv.FormatFloat(newOrder.Quantity, 'f', -1, 64), newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
+			case "crex24":
+				crex24OrderCreate(newOrder.Pair, newOrder.Side, newOrder.Price, newOrder.Quantity, newOrder.Stoploss, newOrder.Takeprofit, newOrder.AutoRepeat, newOrder.RefOrderID)
+			}
 		}
 
 	}

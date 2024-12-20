@@ -84,7 +84,7 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 				updateOrderAndSave(msg.Order, true)
 
 			case "refdisable":
-				msg.Order.RefEnabled = 0
+				msg.Order.RefEnabled = -1
 				updateOrderAndSave(msg.Order, true)
 
 			case "list":
