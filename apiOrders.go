@@ -3,6 +3,7 @@ package main
 import (
 	"backpocket/models"
 	"backpocket/utils"
+	"encoding/json"
 
 	"fmt"
 	"log"
@@ -85,11 +86,7 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 			case "refdisable":
 				msg.Order.RefEnabled = 0
-				updateOrderAndSave(msg.Order, false)
-				if err := utils.SqlDB.Model(&msg.Order).Where("pair = ? and exchange = ? and orderid = ?", msg.Order.Pair, msg.Order.Exchange, msg.Order.OrderID).Updates(
-					map[string]interface{}{"refenabled": msg.Order.RefEnabled}).Error; err != nil {
-					log.Println(err.Error())
-				}
+				updateOrderAndSave(msg.Order, true)
 
 			case "list":
 				var searchMsg = searchOrderMsgType{
@@ -223,7 +220,12 @@ func updateOrderAndSave(order models.Order, save bool) {
 }
 
 func saveOrder(order models.Order) {
-	if err := utils.SqlDB.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(&order).Error; err != nil {
+
+	var orderInterface map[string]interface{}
+	inrec, _ := json.Marshal(order)
+	json.Unmarshal(inrec, &orderInterface)
+
+	if err := utils.SqlDB.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(orderInterface).Error; err != nil {
 		log.Println(err.Error())
 	}
 }
