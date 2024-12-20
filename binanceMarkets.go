@@ -268,7 +268,7 @@ func binanceMarket24hrTicker() {
 			}
 		}
 
-		time.Sleep(time.Minute * 5)
+		time.Sleep(time.Minute * 2)
 	}
 }
 
