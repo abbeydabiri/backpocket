@@ -3,6 +3,7 @@ package main
 import (
 	"backpocket/models"
 	"backpocket/utils"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -128,6 +129,43 @@ func batchedUpdateQueryAssets(batchedValues []clause.Expr) {
 	time.Sleep(time.Millisecond * 100)
 }
 
+func binanceAssetStreamKeepAliveListenKey(listenKey string) {
+	client := &http.Client{}
+	ticker := time.NewTicker(20 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+		err := binanceAssetStreamSendKeepAlive(client, listenKey)
+		if err != nil {
+			log.Printf("Failed to send keep-alive for listenKey: %v \n", err)
+		} else {
+			log.Println("Successfully sent keep-alive for listenKey")
+		}
+	}
+}
+
+// sendKeepAlive sends a PUT request to keep the listenKey alive
+func binanceAssetStreamSendKeepAlive(client *http.Client, listenKey string) error {
+	url := binanceRestURL + "/userDataStream?listenKey=" + listenKey
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-MBX-APIKEY", binanceAPIKey)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to keep listenKey alive: %s", resp.Status)
+	}
+	return nil
+}
+
 func binanceAssetStream() {
 
 	var streamParams []string
@@ -166,18 +204,7 @@ func binanceAssetStream() {
 	}
 
 	//make an http get call to binanceRestURL every 30 minutes to keep the stream alive
-	go func() {
-		httpClient := http.Client{Timeout: time.Duration(time.Second * 30)}
-		httpRequest, _ := http.NewRequest("PUT", binanceRestURL+"/time", nil)
-		httpRequest.Header.Set("X-MBX-API", binanceAPIKey)
-		for {
-			time.Sleep(time.Minute * 20)
-			if _, err := httpClient.Do(httpRequest); err != nil {
-				log.Println(err.Error())
-				return
-			}
-		}
-	}()
+	go binanceAssetStreamKeepAliveListenKey(respStruct.ListenKey)
 
 	//loop through and read all messages received
 	for {
@@ -327,6 +354,9 @@ func binanceAssetStream() {
 				Title:   "*Binance Exchange*",
 				Message: fmt.Sprintf("%s limit %s order [%v] for %s %s", order.Status, order.Side, order.OrderID, strconv.FormatFloat(order.Quantity, 'f', -1, 64), order.Pair),
 			}
+
+		default:
+			log.Printf("Unknown Event: %v - %+v", wsResp.Data.Event, wsResp)
 		}
 	}
 
