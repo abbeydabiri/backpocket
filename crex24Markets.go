@@ -367,19 +367,15 @@ func crex24MarketOHLCVStream() {
 						bollingerBands[market.Pair] = bollingerBands[market.Pair][1:]
 					}
 				}
-				marketRSIBands[market.Pair] = append(marketRSIBands[market.Pair], market.Close)
-				if len(marketRSIBands[market.Pair]) > 14 {
-					marketRSIBands[market.Pair] = marketRSIBands[market.Pair][1:]
-				}
 				bollingerBandsMutex.Unlock()
 				calculateBollingerBands(&market)
 
-				marketRSIBandsMutex.Lock()
-				marketRSIBands[market.Pair] = append(marketRSIBands[market.Pair], market.Price)
-				if len(marketRSIBands[market.Pair]) > 14 {
-					marketRSIBands[market.Pair] = marketRSIBands[market.Pair][1:]
+				marketRSIPricesMutex.Lock()
+				marketRSIPrices[market.Pair] = append(marketRSIPrices[market.Pair], market.Price)
+				if len(marketRSIPrices[market.Pair]) > 10 {
+					marketRSIPrices[market.Pair] = marketRSIPrices[market.Pair][1:]
 				}
-				marketRSIBandsMutex.Unlock()
+				marketRSIPricesMutex.Unlock()
 				calculateRSIBands(&market)
 				updateMarket(market)
 

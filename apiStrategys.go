@@ -11,11 +11,13 @@ import (
 )
 
 var (
-	marketRSIBands = make(map[string][]float64)
-	bollingerBands = make(map[string][]float64)
+	bollingerBands  = make(map[string][]float64)
+	marketRSIPrices = make(map[string][]float64)
+	marketRSIValues = make(map[string][]float64)
 
-	marketRSIBandsMutex = sync.RWMutex{}
-	bollingerBandsMutex = sync.RWMutex{}
+	marketRSIValuesMutex = sync.RWMutex{}
+	marketRSIPricesMutex = sync.RWMutex{}
+	bollingerBandsMutex  = sync.RWMutex{}
 
 	chanStoplossTakeProfit = make(chan orderbooks, 10240)
 )
@@ -114,7 +116,7 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float64(5) { // && market.RSI > float64(75) {
+				if market.Close > market.UpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float64(3) && market.RSI > float64(65) {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -169,7 +171,7 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && buyPercentDifference > float64(5) { // && market.RSI < float64(25) {
+				if market.Close < market.LowerBand && market.Close > market.Open && market.Price > market.LastPrice && buyPercentDifference > float64(3) && market.RSI < float64(35) {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
@@ -230,31 +232,51 @@ func apiStrategyStopLossTakeProfit() {
 
 func calculateRSIBands(market *models.Market) {
 
-	marketRSIBandsMutex.RLock()
-	rsiBands := marketRSIBands[market.Pair]
-	marketRSIBandsMutex.RUnlock()
+	marketRSIPricesMutex.RLock()
+	rsiPrices := marketRSIPrices[market.Pair]
+	marketRSIPricesMutex.RUnlock()
 
-	//calculate RSI
-	var rsiGain float64
-	var rsiLoss float64
-
-	for x, closePrice := range rsiBands {
-		if x == 0 {
-			continue
-		}
-
-		switch {
-		case closePrice > rsiBands[x-1]:
-			rsiGain += closePrice - rsiBands[x-1]
-		case closePrice < rsiBands[x-1]:
-			rsiLoss += rsiBands[x-1] - closePrice
-		}
-
+	smoothingLength := 3
+	rsiLength := len(rsiPrices) - 1 //for rsiLenght of 9 rsiPrices must have 10 values
+	if rsiLength < smoothingLength {
+		return
 	}
 
-	rsiValue := (rsiGain / float64(len(rsiBands))) / (rsiLoss / float64(len(rsiBands)))
-	market.RSI = utils.TruncateFloat(100-(100/(1+rsiValue)), 2)
 	//calculate RSI
+	var avgGain, avgLoss float64
+	for i := 1; i < len(rsiPrices); i++ {
+		change := rsiPrices[i] - rsiPrices[i-1]
+		switch {
+		case change > 0:
+			avgGain += change
+		case change < 0:
+			avgLoss += -change
+		}
+	}
+
+	avgGain /= float64(rsiLength)
+	avgLoss /= float64(rsiLength)
+
+	rsiValue := avgGain / avgLoss
+	rsiValue = utils.TruncateFloat(100-(100/(1+rsiValue)), 2)
+	//calculate RSI
+
+	//Update RSI values for the market
+	marketRSIValuesMutex.Lock()
+	marketRSIValues[market.Pair] = append(marketRSIValues[market.Pair], rsiValue)
+	if len(marketRSIValues[market.Pair]) > smoothingLength {
+		marketRSIValues[market.Pair] = marketRSIValues[market.Pair][1:]
+	}
+	rsiValue = 0
+	for _, rsi := range marketRSIValues[market.Pair] {
+		rsiValue += rsi
+	}
+	marketRSIValuesMutex.Unlock()
+	//Update RSI values for the market
+
+	//applying RSI smoothing
+	rsiValue /= float64(smoothingLength)
+	market.RSI = utils.TruncateFloat(rsiValue, 2)
 }
 
 func calculateBollingerBands(market *models.Market) {
