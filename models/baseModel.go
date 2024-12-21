@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -19,10 +21,9 @@ type Base struct {
 var counter int64
 
 func TableID() uint64 {
-	// sqlID, _ := strconv.Atoi(fmt.Sprintf("%v", time.Now().UnixNano())[:15])
-	// sqlID, _ := strconv.Atoi(fmt.Sprintf("%v", time.Now().UnixNano()))
-
-	sqlID := time.Now().UnixNano() + atomic.AddInt64(&counter, 1)
+	//Values get lost during websocket connection due to float64 supporting max 15 digits
+	sqlIDstring := fmt.Sprintf("%v", time.Now().UnixNano()+atomic.AddInt64(&counter, 1))[4:]
+	sqlID, _ := strconv.Atoi(sqlIDstring)
 	return uint64(sqlID)
 }
 

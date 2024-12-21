@@ -3,6 +3,7 @@ package main
 import (
 	"backpocket/models"
 	"backpocket/utils"
+	"encoding/json"
 
 	"fmt"
 	"log"
@@ -219,18 +220,27 @@ func updateOrderAndSave(order models.Order, save bool) {
 }
 
 func saveOrder(order models.Order) {
-	if err := utils.SqlDB.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(&order).Error; err != nil {
+
+	//convert order to a map interface using json
+	orderMap := make(map[string]interface{})
+	orderJSON, err := json.Marshal(order)
+	if err != nil {
+		log.Println("Error marshalling order to JSON:", err)
+		return
+	}
+	if err := json.Unmarshal(orderJSON, &orderMap); err != nil {
+		log.Println("Error unmarshalling JSON to map:", err)
+		return
+	}
+
+	if err := utils.SqlDB.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(orderMap).Error; err != nil {
 		log.Println(err.Error())
 	}
 
-	//raw sql update as we struggled to get gorm to update the refenabled or autorepeat fields to 0
-	if order.RefEnabled == 0 || order.AutoRepeat == 0 {
-		if err := utils.SqlDB.Exec("UPDATE orders SET refenabled = ?, autorepeat = ? WHERE orderid = ? AND exchange = ? AND pair = ?",
-			order.RefEnabled, order.AutoRepeat, order.OrderID, order.Exchange, order.Pair).Error; err != nil {
-			log.Println(err.Error())
-		}
-	}
-	//raw sql update as we struggled to get gorm to update the refenabled or autorepeat fields to 0
+	// sql := utils.SqlDB.ToSQL(func(tx *gorm.DB) *gorm.DB {
+	// 	return tx.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(orderMap)
+	// })
+	// log.Println("Query: ", sql)
 }
 
 func LoadOrdersFromDB() {
