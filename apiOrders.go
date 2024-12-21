@@ -86,11 +86,6 @@ func wsHandlerOrders(httpRes http.ResponseWriter, httpReq *http.Request) {
 			case "refdisable":
 				msg.Order.RefEnabled = 0
 				updateOrderAndSave(msg.Order, true)
-				//raw sql update as we struggled to get gorm to update the refenabled field to 0
-				if err := utils.SqlDB.Exec("UPDATE orders SET refenabled = 0 WHERE orderid = ? AND exchange = ? AND pair = ?", msg.Order.OrderID, msg.Order.Exchange, msg.Order.Pair).Error; err != nil {
-					log.Println(err.Error())
-				}
-				//raw sql update as we struggled to get gorm to update the refenabled field to 0
 
 			case "list":
 				var searchMsg = searchOrderMsgType{
@@ -227,6 +222,15 @@ func saveOrder(order models.Order) {
 	if err := utils.SqlDB.Model(&order).Where("pair = ? and exchange = ? and orderid = ?", order.Pair, order.Exchange, order.OrderID).Updates(&order).Error; err != nil {
 		log.Println(err.Error())
 	}
+
+	//raw sql update as we struggled to get gorm to update the refenabled or autorepeat fields to 0
+	if order.RefEnabled == 0 || order.AutoRepeat == 0 {
+		if err := utils.SqlDB.Exec("UPDATE orders SET refenabled = ?, autorepeat = ? WHERE orderid = ? AND exchange = ? AND pair = ?",
+			order.RefEnabled, order.AutoRepeat, order.OrderID, order.Exchange, order.Pair).Error; err != nil {
+			log.Println(err.Error())
+		}
+	}
+	//raw sql update as we struggled to get gorm to update the refenabled or autorepeat fields to 0
 }
 
 func LoadOrdersFromDB() {

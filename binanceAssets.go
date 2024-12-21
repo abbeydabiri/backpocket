@@ -337,6 +337,8 @@ func binanceAssetStream() {
 				executedQty, _ := strconv.ParseFloat(wRespOrderupdate.Data.CummulativeFilledQty, 64)
 				cummulativeQuoteQty, _ := strconv.ParseFloat(wRespOrderupdate.Data.CummulativeQuoteTransactedQty, 64)
 
+				order.Quantity, _ = strconv.ParseFloat(wRespOrderupdate.Data.OrderQuantity, 64)
+				order.Total, _ = strconv.ParseFloat(wRespOrderupdate.Data.QuoteOrderQty, 64)
 				if executedQty > 0 && order.Status == "CANCELED" {
 					order.Status = "FILLED"
 				}
