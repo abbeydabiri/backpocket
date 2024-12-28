@@ -132,14 +132,14 @@ func calculateBollingerBands(closePrices []float64, period int, stdDev float64) 
 }
 
 func overallTrend(trend10, trend20, trend50 string) string {
-	validTrends := map[string]bool{
-		Bullish: true,
-		Bearish: true,
-		Neutral: true,
-	}
-	if !validTrends[trend10] || !validTrends[trend20] || !validTrends[trend50] {
-		return Neutral // Default to Neutral for invalid input
-	}
+	// validTrends := map[string]bool{
+	// 	Bullish: true,
+	// 	Bearish: true,
+	// 	Neutral: true,
+	// }
+	// if !validTrends[trend10] || !validTrends[trend20] || !validTrends[trend50] {
+	// 	return Neutral // Default to Neutral for invalid input
+	// }
 
 	trend := make(map[string]int)
 	trend[trend10]++
