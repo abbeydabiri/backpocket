@@ -70,9 +70,9 @@ func analyzeTrend(data MarketData, period int) trendAnalysis {
 	trendSpread := resistance - support
 	trendSpread = TruncateFloat((trendSpread/support)*100, 3)
 
-	entryPrice = TruncateFloat(entryPrice, 6)
-	stopLoss := TruncateFloat(entryPrice-(entryPrice-support)*0.5, 6)
-	takeProfit := TruncateFloat(resistance+(resistance-entryPrice)*0.5, 6)
+	entryPrice = TruncateFloat(entryPrice, 8)
+	stopLoss := TruncateFloat(entryPrice-(entryPrice-support)*0.5, 8)
+	takeProfit := TruncateFloat(resistance+(resistance-entryPrice)*0.5, 8)
 
 	return trendAnalysis{
 		Trend:      trend,
@@ -88,11 +88,11 @@ func analyzeTrend(data MarketData, period int) trendAnalysis {
 // calculateFibonacciRetracement computes retracement levels.
 func calculateFibonacciRetracement(high, low float64) map[string]float64 {
 	levels := map[string]float64{
-		"0.236": TruncateFloat(high-(high-low)*0.236, 6),
-		"0.382": TruncateFloat(high-(high-low)*0.382, 6),
-		"0.500": TruncateFloat(high-(high-low)*0.500, 6),
-		"0.618": TruncateFloat(high-(high-low)*0.618, 6),
-		"0.786": TruncateFloat(high-(high-low)*0.786, 6),
+		"0.236": TruncateFloat(high-(high-low)*0.236, 8),
+		"0.382": TruncateFloat(high-(high-low)*0.382, 8),
+		"0.500": TruncateFloat(high-(high-low)*0.500, 8),
+		"0.618": TruncateFloat(high-(high-low)*0.618, 8),
+		"0.786": TruncateFloat(high-(high-low)*0.786, 8),
 	}
 	return levels
 }
@@ -118,9 +118,9 @@ func calculateBollingerBands(closePrices []float64, period int, stdDev float64) 
 	lower := make([]float64, len(middle))
 	for i := 0; i < len(middle); i++ {
 		if i >= period-1 {
-			middle[i] = TruncateFloat(middle[i], 6)
-			upper[i] = TruncateFloat(middle[i]+stdDev*stdDevArray[i], 6)
-			lower[i] = TruncateFloat(middle[i]-stdDev*stdDevArray[i], 6)
+			middle[i] = TruncateFloat(middle[i], 8)
+			upper[i] = TruncateFloat(middle[i]+stdDev*stdDevArray[i], 8)
+			lower[i] = TruncateFloat(middle[i]-stdDev*stdDevArray[i], 8)
 		}
 	}
 
