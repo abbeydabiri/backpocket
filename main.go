@@ -80,7 +80,7 @@ func main() {
 	muxRouter.HandleFunc("/websocket/analysis", wsHandlerAnalysis)
 
 	// run our strategy process
-	// go apiStrategyStopLossTakeProfit()
+	go apiStrategyStopLossTakeProfit()
 
 	go binanceAssetGet()
 	wg := sync.WaitGroup{}
