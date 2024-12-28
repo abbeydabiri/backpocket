@@ -198,9 +198,6 @@ func wsHandlerMarketBroadcast() {
 
 	go func() {
 		for market := range wsBroadcastMarket {
-			if market.Pair == "" {
-				continue
-			}
 			wsConnMarketsMutex.Lock()
 			for wsConn := range wsConnMarkets {
 				if err := wsConn.WriteJSON(market); err != nil {

@@ -148,9 +148,6 @@ func wsHandlerTradeBroadcast() {
 
 	go func() {
 		for trade := range wsBroadcastTrade {
-			if trade == nil {
-				continue
-			}
 			wsConnTradesMutex.Lock()
 			for wsConn := range wsConnTrades {
 				if err := wsConn.WriteJSON(trade); err != nil {

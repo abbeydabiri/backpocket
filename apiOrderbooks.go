@@ -177,9 +177,6 @@ func wsHandlerOrderbookBroadcast() {
 
 	go func() {
 		for orderbook := range wsBroadcastOrderBook {
-			if orderbook == nil {
-				continue
-			}
 			wsConnOrderbooksMutex.Lock()
 			for wsConn := range wsConnOrderbooks {
 				orderbookMutex.RLock()

@@ -165,9 +165,6 @@ func wsHandlerOrderBroadcast() {
 
 	go func() {
 		for order := range wsBroadcastOrder {
-			if len(order) == 0 {
-				continue
-			}
 			wsConnOrdersMutex.Lock()
 			for wsConn := range wsConnOrders {
 				if err := wsConn.WriteJSON(order); err != nil {

@@ -103,9 +103,6 @@ func wsHandlerAnalysisBroadcast() {
 
 	go func() {
 		for analysis := range wsBroadcastAnalysis {
-			if analysis.Pair == "" {
-				continue
-			}
 			wsConnAnalysisMutex.Lock()
 			for wsConn := range wsConnAnalysis {
 				if err := wsConn.WriteJSON(analysis); err != nil {
