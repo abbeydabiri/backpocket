@@ -163,9 +163,6 @@ func binanceOrderCreate(pair, side, price, quantity string, stoploss, takeprofit
 		newOrder.RefEnabled = 1
 	}
 
-	// log.Printf("New Order respBytes: %s\n", respBytes)
-	// log.Printf("New Order Created: %+v \n", newOrder)
-
 	newOrder.RefOrderID = reforderid
 	updateOrderAndSave(newOrder, true)
 
