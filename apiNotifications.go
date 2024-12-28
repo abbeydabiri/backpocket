@@ -54,6 +54,9 @@ func wsHandlerNotificationBroadcast() {
 	go func() {
 
 		for notify := range wsBroadcastNotification {
+			if notify.Type == "" {
+				continue
+			}
 			wsConnNotificationsMutex.Lock()
 			for wsConn := range wsConnNotifications {
 				if err := wsConn.WriteJSON(notify); err != nil {

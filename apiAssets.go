@@ -135,6 +135,9 @@ func wsHandlerAssetBroadcast() {
 
 	go func() {
 		for asset := range wsBroadcastAsset {
+			if asset.Result == nil {
+				continue
+			}
 			wsConnAssetsMutex.Lock()
 			for wsConn := range wsConnAssets {
 				if err := wsConn.WriteJSON(asset); err != nil {

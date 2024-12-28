@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -276,7 +276,7 @@ func binanceRestAPI(method, url, params string) []byte {
 	}
 
 	defer httpResponse.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+	bodyBytes, err := io.ReadAll(httpResponse.Body)
 	if err != nil {
 		log.Println(err.Error())
 		return nil

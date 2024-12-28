@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jinzhu/copier v0.4.0
+	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/muzykantov/orderbook v0.0.0-20190314143358-f93a3deda343
 	github.com/spf13/viper v1.19.0
 	github.com/swaggo/http-swagger v1.3.4
@@ -18,7 +19,6 @@ require (
 	golang.org/x/crypto v0.31.0
 	golang.org/x/mobile v0.0.0-20241213221354-a87c1cf6cf46
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )
 
@@ -56,7 +56,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect

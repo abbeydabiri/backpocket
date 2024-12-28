@@ -3,7 +3,8 @@ package main
 import (
 	"backpocket/utils"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -29,7 +30,7 @@ func crex24MarketGet() {
 	}
 	defer httpResponse.Body.Close()
 
-	bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+	bodyBytes, err := io.ReadAll(httpResponse.Body)
 	if err != nil {
 		log.Panic(err.Error())
 		return
@@ -109,7 +110,7 @@ func crex24Market24hrTicker() {
 		}
 		defer httpResponse.Body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+		bodyBytes, err := io.ReadAll(httpResponse.Body)
 		if err != nil {
 			log.Println(err.Error())
 			time.Sleep(time.Second * 15)
@@ -317,7 +318,7 @@ func crex24MarketOHLCVStream() {
 			}
 			defer httpResponse.Body.Close()
 
-			bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+			bodyBytes, err := io.ReadAll(httpResponse.Body)
 			if err != nil {
 				log.Println(err.Error())
 				continue
@@ -360,40 +361,25 @@ func crex24MarketOHLCVStream() {
 					market.Price = market.Close
 				}
 
-				bollingerBandsMutex.Lock()
-				if market.Closed == 1 || len(bollingerBands[market.Pair]) < 20 {
-					bollingerBands[market.Pair] = append(bollingerBands[market.Pair], market.Close)
-					if len(bollingerBands[market.Pair]) > 20 {
-						bollingerBands[market.Pair] = bollingerBands[market.Pair][1:]
-					}
-				}
-				bollingerBandsMutex.Unlock()
 				calculateBollingerBands(&market)
 
 				marketRSIPricesMutex.Lock()
-				marketRSIPrices[market.Pair] = append(marketRSIPrices[market.Pair], market.Price)
-				if len(marketRSIPrices[market.Pair]) > 10 {
-					marketRSIPrices[market.Pair] = marketRSIPrices[market.Pair][1:]
+				rsimapkey := fmt.Sprintf("%s-%s", market.Pair, market.Exchange)
+				rsimaplenght := len(marketRSIPrices[rsimapkey])
+				if rsimaplenght > 1 {
+					marketRSIPrices[rsimapkey][rsimaplenght-1] = market.Price
 				}
 				marketRSIPricesMutex.Unlock()
 				calculateRSIBands(&market)
 				updateMarket(market)
 
-				if market.Status == "enabled" {
-					select {
-					case wsBroadcastMarket <- market:
-					default:
-					}
-				}
-
 				if market.Closed == 1 {
-
 					if err := utils.SqlDB.Model(&market).Where("pair = ? and exchange = ?", market.Pair, market.Exchange).Updates(&market).Error; err != nil {
 						log.Println(err.Error())
 					}
 				}
 			}
-			// OHCLV DATA - CANDLESTICK DATA PER MINUTE
+
 		}
 
 		time.Sleep(time.Second * 15)

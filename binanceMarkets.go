@@ -4,7 +4,8 @@ import (
 	"backpocket/models"
 	"backpocket/utils"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -33,7 +34,7 @@ func binanceGetExistingMarkets(wg *sync.WaitGroup) {
 		}
 		defer httpResponse.Body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+		bodyBytes, err := io.ReadAll(httpResponse.Body)
 		if err != nil {
 			log.Printf(err.Error())
 			time.Sleep(time.Minute * 5)
@@ -164,7 +165,7 @@ func binanceMarket24hrTicker() {
 		}
 		defer httpResponse.Body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+		bodyBytes, err := io.ReadAll(httpResponse.Body)
 		if err != nil {
 			log.Println(err.Error())
 			time.Sleep(time.Second * 10)
@@ -219,22 +220,6 @@ func binanceMarket24hrTicker() {
 						log.Println(err.Error())
 					}
 
-					// if market.AskPrice, err = strconv.ParseFloat(marketPair.AskPrice, 64); err != nil {
-					// 	log.Println(err.Error())
-					// }
-
-					// if market.AskQty, err = strconv.ParseFloat(marketPair.AskQty, 64); err != nil {
-					// 	log.Println(err.Error())
-					// }
-
-					// if market.BidPrice, err = strconv.ParseFloat(marketPair.BidPrice, 64); err != nil {
-					// 	log.Println(err.Error())
-					// }
-
-					// if market.BidQty, err = strconv.ParseFloat(marketPair.BidQty, 64); err != nil {
-					// 	log.Println(err.Error())
-					// }
-
 					if market.Close, err = strconv.ParseFloat(marketPair.LastPrice, 64); err != nil {
 						log.Println(err.Error())
 					}
@@ -268,7 +253,7 @@ func binanceMarket24hrTicker() {
 			}
 		}
 
-		time.Sleep(time.Minute * 10)
+		time.Sleep(time.Minute * 5)
 	}
 }
 
@@ -292,7 +277,7 @@ func binanceMarketOHLCVStream() {
 	for _, market := range marketList {
 		// streamParams = append(streamParams, strings.ToLower(market.Pair)+"@bookTicker")
 		if market.Status == "enabled" && market.Exchange == "binance" {
-			streamParams = append(streamParams, strings.ToLower(market.Pair)+"@kline_1m")
+			streamParams = append(streamParams, strings.ToLower(market.Pair)+"@kline_"+DefaultTimeframe)
 		}
 	}
 	marketListMutex.RUnlock()
@@ -313,7 +298,7 @@ func binanceMarketOHLCVStream() {
 			marketListMutex.RLock()
 			for _, market := range marketList {
 				if market.Status == "enabled" && market.Exchange == "binance" {
-					streamParams = append(streamParams, strings.ToLower(market.Pair)+"@kline_1m")
+					streamParams = append(streamParams, strings.ToLower(market.Pair)+"@kline_"+DefaultTimeframe)
 				}
 			}
 			marketListMutex.RUnlock()
@@ -368,41 +353,19 @@ func binanceMarketOHLCVStream() {
 		market.Close, _ = strconv.ParseFloat(wsResp.Data.Kline.Close, 64)
 		market.Volume, _ = strconv.ParseFloat(wsResp.Data.Kline.Volume, 64)
 		market.VolumeQuote, _ = strconv.ParseFloat(wsResp.Data.Kline.VolumeQuote, 64)
-
-		//set marketprice and save
-		// if market.Price == 0 {
-		// 	market.Price = market.Close
-		// }
-		// if market.LastPrice == 0 {
-		// 	market.LastPrice = market.Price
-		// }
-
-		bollingerBandsMutex.Lock()
-		if wsResp.Data.Kline.Closed || len(bollingerBands[market.Pair]) < 20 {
-			bollingerBands[market.Pair] = append(bollingerBands[market.Pair], market.Close)
-			if len(bollingerBands[market.Pair]) > 20 {
-				bollingerBands[market.Pair] = bollingerBands[market.Pair][1:]
-			}
-		}
-		bollingerBandsMutex.Unlock()
 		calculateBollingerBands(&market)
 
 		marketRSIPricesMutex.Lock()
-		marketRSIPrices[market.Pair] = append(marketRSIPrices[market.Pair], market.Price)
-		if len(marketRSIPrices[market.Pair]) > 10 { //for rsiLenght of 9 rsiPrices must have 10 values
-			marketRSIPrices[market.Pair] = marketRSIPrices[market.Pair][1:]
+		rsimapkey := fmt.Sprintf("%s-%s", market.Pair, market.Exchange)
+		rsimaplenght := len(marketRSIPrices[rsimapkey])
+		if rsimaplenght > 1 {
+			marketRSIPrices[rsimapkey][rsimaplenght-1] = market.Price
 		}
 		marketRSIPricesMutex.Unlock()
 		calculateRSIBands(&market)
 		updateMarket(market)
 
-		// select {
-		// case chanStoplossTakeProfit <- getOrderbook(market.Pair, "binance"):
-		// default:
-		// }
-
 		if wsResp.Data.Kline.Closed {
-
 			if err := utils.SqlDB.Model(&market).Where("pair = ? and exchange = ?", market.Pair, market.Exchange).Updates(&market).Error; err != nil {
 				log.Println(err.Error())
 			}

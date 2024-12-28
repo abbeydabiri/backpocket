@@ -54,6 +54,8 @@ func main() {
 	LoadMarketsFromDB()
 
 	muxRouter := mux.NewRouter()
+	muxRouter.HandleFunc("/api/v1/kline", restHandlerKline).Methods("GET")
+	muxRouter.HandleFunc("/api/v1/analysis", restHandlerAnalysis).Methods("GET")
 
 	wsHandlerAssetBroadcast()
 	muxRouter.HandleFunc("/websocket/assets", wsHandlerAssets)
@@ -74,6 +76,9 @@ func main() {
 	wsHandlerOrderbookBroadcast()
 	muxRouter.HandleFunc("/websocket/orderbooks", wsHandlerOrderbooks)
 
+	wsHandlerAnalysisBroadcast()
+	muxRouter.HandleFunc("/websocket/analysis", wsHandlerAnalysis)
+
 	// run our strategy process
 	go apiStrategyStopLossTakeProfit()
 
@@ -84,6 +89,7 @@ func main() {
 	go binanceGetExistingMarkets(&wg)
 	wg.Wait()
 	go binanceAssetStream()
+	go GoFetchEnabledMarketsAnalysis()
 
 	// go binanceTradeStream() //disabled due to not being needed and data overflooding and high cpu usage
 	go binanceOrderBookStream()
