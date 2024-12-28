@@ -21,8 +21,6 @@ var (
 	orderList    []models.Order
 	orderListMap = make(map[string]int)
 
-	orderListFetchMutex = sync.RWMutex{}
-
 	orderListMutex    = sync.RWMutex{}
 	orderListMapMutex = sync.RWMutex{}
 	wsConnOrdersMutex = sync.RWMutex{}
@@ -167,6 +165,9 @@ func wsHandlerOrderBroadcast() {
 
 	go func() {
 		for order := range wsBroadcastOrder {
+			if len(order) == 0 {
+				continue
+			}
 			wsConnOrdersMutex.Lock()
 			for wsConn := range wsConnOrders {
 				if err := wsConn.WriteJSON(order); err != nil {

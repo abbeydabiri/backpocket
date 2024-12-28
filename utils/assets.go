@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"golang.org/x/mobile/asset"
 )
 
-//Asset ...
+// Asset ...
 func Asset(filename string) (assetByte []byte, assetError error) {
 	if strings.HasSuffix(filename, "/") {
 		assetError = fmt.Errorf("directory listing forbidden")
@@ -25,7 +26,7 @@ func Asset(filename string) (assetByte []byte, assetError error) {
 				strings.HasPrefix(filename, "frontend/"):
 				if f, errOpen := asset.Open(filename); errOpen == nil {
 					defer f.Close()
-					assetByte, assetError = ioutil.ReadAll(f)
+					assetByte, assetError = io.ReadAll(f)
 				}
 
 			default:
@@ -38,7 +39,7 @@ func Asset(filename string) (assetByte []byte, assetError error) {
 	return
 }
 
-//AssetDir ...
+// AssetDir ...
 func AssetDir(fileDir string) (assetString []string, assetError error) {
 	var filePath string
 	switch Config.OS {
@@ -56,7 +57,7 @@ func AssetDir(fileDir string) (assetString []string, assetError error) {
 	return
 }
 
-//AssetRemove ...
+// AssetRemove ...
 func AssetRemove(filePath string) (assetError error) {
 	filePath = Config.Path + filePath
 	if err := os.Remove(filePath); err != nil {
@@ -65,7 +66,7 @@ func AssetRemove(filePath string) (assetError error) {
 	return
 }
 
-//AssetDirList ...
+// AssetDirList ...
 func AssetDirList(fileDir string) (assetString []string, assetError error) {
 	fileDir = Config.Path + fileDir
 	fileInfos, err := ioutil.ReadDir(fileDir)
@@ -77,7 +78,7 @@ func AssetDirList(fileDir string) (assetString []string, assetError error) {
 	return
 }
 
-//AssetDirRemove ...
+// AssetDirRemove ...
 func AssetDirRemove(fileDir string) (assetError error) {
 	fileDir = Config.Path + fileDir
 	_, assetError = os.Stat(fileDir)

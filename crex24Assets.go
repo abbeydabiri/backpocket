@@ -102,7 +102,7 @@ func crex24AssetStream() {
 	// 	return
 	// }
 
-	// respBytes, err := ioutil.ReadAll(httpResponse.Body)
+	// respBytes, err := io.ReadAll(httpResponse.Body)
 	// if err != nil {
 	// 	log.Panicf(err.Error())
 	// 	return

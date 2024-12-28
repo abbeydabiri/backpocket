@@ -123,6 +123,7 @@ func wsHandlerMarkets(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 			if err := wsConn.ReadJSON(&msg); err != nil {
 				log.Println("wsConn.ReadJSON: ", err)
+				// wsConn.Close()
 				return
 			}
 
@@ -197,11 +198,19 @@ func wsHandlerMarketBroadcast() {
 
 	go func() {
 		for market := range wsBroadcastMarket {
+			if market.Pair == "" {
+				continue
+			}
 			wsConnMarketsMutex.Lock()
 			for wsConn := range wsConnMarkets {
 				if err := wsConn.WriteJSON(market); err != nil {
-					delete(wsConnMarkets, wsConn)
-					wsConn.Close()
+					if err.Error() != "websocket: close sent" {
+						log.Printf("market: %+v", market)
+						log.Println("error writing market json: ", err.Error())
+					} else {
+						delete(wsConnMarkets, wsConn)
+						wsConn.Close()
+					}
 				}
 			}
 			wsConnMarketsMutex.Unlock()

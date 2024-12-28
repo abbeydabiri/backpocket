@@ -5,17 +5,18 @@ import (
 	"backpocket/utils"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"sync"
+)
+
+const (
+	DefaultTimeframe = "1m"
 )
 
 var (
 	bollingerBands  = make(map[string][]float64)
 	marketRSIPrices = make(map[string][]float64)
-	marketRSIValues = make(map[string][]float64)
 
-	marketRSIValuesMutex = sync.RWMutex{}
 	marketRSIPricesMutex = sync.RWMutex{}
 	bollingerBandsMutex  = sync.RWMutex{}
 
@@ -232,85 +233,21 @@ func apiStrategyStopLossTakeProfit() {
 	}
 }
 
-func calculateRSIBands(market *models.Market) {
+func calculateBollingerBands(market *models.Market) {
+	analysis := getAnalysis(market.Pair, market.Exchange)
+	if analysis.Intervals[DefaultTimeframe].Timeframe == DefaultTimeframe {
+		market.UpperBand = analysis.Intervals[DefaultTimeframe].BollingerBands["upper"]
+		market.MiddleBand = analysis.Intervals[DefaultTimeframe].BollingerBands["middle"]
+		market.LowerBand = analysis.Intervals[DefaultTimeframe].BollingerBands["lower"]
+	}
+}
 
+func calculateRSIBands(market *models.Market) {
 	marketRSIPricesMutex.RLock()
 	rsiPrices := marketRSIPrices[market.Pair]
 	marketRSIPricesMutex.RUnlock()
-
-	smoothingLength := 3
-	rsiLength := len(rsiPrices) - 1 //for rsiLenght of 9 rsiPrices must have 10 values
-	if rsiLength < smoothingLength {
-		return
+	market.RSI = 0
+	if len(rsiPrices) > 14 {
+		market.RSI = utils.CalculateSmoothedRSI(rsiPrices, 14, 5)
 	}
-
-	//calculate RSI
-	var avgGain, avgLoss float64
-	for i := 1; i < len(rsiPrices); i++ {
-		change := rsiPrices[i] - rsiPrices[i-1]
-		switch {
-		case change > 0:
-			avgGain += change
-		case change < 0:
-			avgLoss += -change
-		}
-	}
-
-	avgGain /= float64(rsiLength)
-	avgLoss /= float64(rsiLength)
-
-	rsiValue := avgGain / avgLoss
-	rsiValue = utils.TruncateFloat(100-(100/(1+rsiValue)), 2)
-	//calculate RSI
-
-	//Update RSI values for the market
-	marketRSIValuesMutex.Lock()
-	marketRSIValues[market.Pair] = append(marketRSIValues[market.Pair], rsiValue)
-	if len(marketRSIValues[market.Pair]) > smoothingLength {
-		marketRSIValues[market.Pair] = marketRSIValues[market.Pair][1:]
-	}
-	rsiValue = 0
-	for _, rsi := range marketRSIValues[market.Pair] {
-		rsiValue += rsi
-	}
-	marketRSIValuesMutex.Unlock()
-	//Update RSI values for the market
-
-	//applying RSI smoothing
-	rsiValue /= float64(smoothingLength)
-	market.RSI = utils.TruncateFloat(rsiValue, 2)
-}
-
-func calculateBollingerBands(market *models.Market) {
-
-	bollingerBandsMutex.RLock()
-	marketBands := bollingerBands[market.Pair]
-	bollingerBandsMutex.RUnlock()
-
-	if len(marketBands) < 3 {
-		return
-	}
-
-	//Calculate the simple moving average:
-	var sumClosePrice float64
-	for _, closePrice := range marketBands {
-		sumClosePrice += closePrice
-		market.MiddleBand = sumClosePrice / float64(len(marketBands))
-	}
-	//Calculate the simple moving average:
-
-	//Next, for each close price, subtract average from each close price and square this value
-	//e.g 25.5 - 26.6 =	-1.1	squared =	1.21
-	//	  26.75 - 26.6 =	0.15	squared =	0.023
-	var sumAverageClose float64
-	for _, closePrice := range marketBands {
-		closeAvgDiff := closePrice - market.MiddleBand
-		sumAverageClose += closeAvgDiff * closeAvgDiff
-	}
-	//Add the above calculated values, divide by size of closes available,
-	//and then get the square root of this value to get the deviation value:
-	sumAverageCloseSquared := math.Sqrt(sumAverageClose / float64(len(marketBands)))
-
-	market.UpperBand = market.MiddleBand + (2 * sumAverageCloseSquared)
-	market.LowerBand = market.MiddleBand - (2 * sumAverageCloseSquared)
 }

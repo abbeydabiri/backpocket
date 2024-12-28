@@ -44,7 +44,7 @@ type Market struct {
 	PriceChangePercent float64 `json:"PriceChangePercent" gorm:"index;column:pricechangepercent"`
 	HighPrice          float64 `json:"HighPrice" gorm:"index;column:highprice"`
 	LowPrice           float64 `json:"LowPrice" gorm:"index;column:lowprice"`
-	RSI                float64 `json:"RSI"`
+	RSI                float64 `json:"RSI" gorm:"default:0"`
 }
 
 func (model *Market) BeforeCreate(tx *gorm.DB) error {

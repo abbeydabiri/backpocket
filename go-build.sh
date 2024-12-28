@@ -1,2 +1,2 @@
 #!/bin/bash
-go build -o backpocket -ldflags "-s -w" #&& upx backpocket
+go build -race -o backpocket -ldflags "-s -w" #&& upx backpocket

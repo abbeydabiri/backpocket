@@ -3,7 +3,7 @@ package main
 import (
 	"backpocket/utils"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -43,7 +43,7 @@ func crex24OrderBookRest() {
 		}
 		defer httpResponse.Body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+		bodyBytes, err := io.ReadAll(httpResponse.Body)
 		if err != nil {
 			log.Println(err.Error())
 			time.Sleep(time.Second * 10)
