@@ -244,7 +244,8 @@ func calculateBollingerBands(market *models.Market) {
 
 func calculateRSIBands(market *models.Market) {
 	marketRSIPricesMutex.RLock()
-	rsiPrices := marketRSIPrices[market.Pair]
+	rsimapkey := fmt.Sprintf("%s-%s", market.Pair, market.Exchange)
+	rsiPrices := marketRSIPrices[rsimapkey]
 	marketRSIPricesMutex.RUnlock()
 	market.RSI = 0
 	if len(rsiPrices) > 14 {
