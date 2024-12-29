@@ -1,0 +1,46 @@
+//CHECK TO BUY BACK -> // BUYING LOGIC
+
+//Overall Trend == "Strong Bearish"
+//Price lower than lowest retracement level
+//Check RSI < 30
+//Candle is Green
+
+if market.Close <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) &&
+  marketRSI < float64(30) && marketTrend == "Strong Bearish" && market.Price < lowestRetracement {
+
+**PREVIOUS LOGICS BELOW**
+
+// if market.Close > market.Open && market.Price > market.LastPrice {
+// if market.Price > market.LastPrice && market.Close < market.Open {
+// if market.Close > market.Open && market.Price > market.LastPrice && market.LastPrice > market.MiddleBand {
+
+/*
+  *Best Time to Buy:*
+
+  Buy at the Lower Band:
+    When the Current Price touches or dips below the Lower Bollinger Band, it signals that the price is potentially oversold.
+    Look for confirmation that the price is starting to rebound (e.g., a green candle forming on the next tick).
+
+  Volume Confirmation:
+    High volume on the bounce indicates strong buying interest.
+
+  Oversold Signals:
+    Use a complementary indicator like RSI (Relative Strength Index) to confirm oversold conditions (e.g., RSI < 30).
+
+  Avoid Buying in a Downtrend:
+    If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
+*/
+
+// if market.Pair == "XRPUSDT" && marketRSI > 0 {
+// 	fmt.Printf("\n\n\n")
+// 	fmt.Println("market: ", market.Pair, " - CHECK TO BUY BACK - ",
+// 		market.Close <= marketLowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && marketRSI < float64(30))
+
+// 	fmt.Println("market.Close <= marketLowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && marketRSI < float64(30)")
+// 	fmt.Println(market.Close, " <= ", marketLowerBand, " && ", market.Close, " > ", market.Open, " && ", market.Price, " > ", market.LastPrice, " && ", orderBookBidsBaseTotal, " > ", orderBookAsksBaseTotal, " && ", marketRSI, " < ", float64(30))
+// 	fmt.Println(market.Close <= marketLowerBand, market.Close > market.Open, market.Price > market.LastPrice, orderBookBidsBaseTotal > orderBookAsksBaseTotal, marketRSI < float64(30))
+// }
+
+//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
+// buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
+// if market.Close <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) && marketRSI <= float64(30) {}

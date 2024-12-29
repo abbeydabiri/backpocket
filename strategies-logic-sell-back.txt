@@ -1,0 +1,43 @@
+//CHECK TO SELL BACK -> // SELLING LOGIC
+
+//Check RSI > 30
+//Overall Trend == "Strong Bullish"
+//Price higher than lowest retracement level
+//Candle is Red
+
+if market.Close >= marketUpperBand && market.Close < market.Open && buyPercentDifference > float64(2) &&
+    marketRSI > float64(70) && marketTrend == "Strong Bullish" && market.Price > highestRetracement {
+
+**PREVIOUS LOGICS BELOW**
+
+// if market.Close < market.Open && market.Price < market.LastPrice {
+// if market.Price < market.LastPrice && market.Close > market.Open {
+// if market.Close < market.Open && market.Price < market.LastPrice && market.LastPrice < market.LowerBand {
+
+/*
+  *Best Time to Sell:*
+
+  Sell at the Upper Band:
+    When the Current Price touches or exceeds the Upper Bollinger Band, it signals potential overbought conditions.
+
+  Volume Confirmation:
+    Check for decreasing volume or signs of a reversal (e.g., red candles forming after hitting the Upper Band).
+
+  Overbought Signals:
+    Use RSI > 70 to confirm overbought conditions.
+*/
+
+// if market.Pair == "XRPUSDT" && market.RSI > 0 {
+// log.Printf("\n\n\n")
+// log.Println("market: ", market.Pair, " - CHECK TO SELL BACK - ",
+// 	market.Close > marketUpperBand && market.Close < market.Open && market.Price < market.LastPrice && (sellPercentDifference > float64(3) || marketRSI > float64(65)))
+
+// log.Println("market.Close > marketUpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float64(3) || marketRSI > float64(65)")
+// log.Println(market.Close, " > ", marketUpperBand, " && ", market.Close, " < ", market.Open, " && ", market.Price, " < ", market.LastPrice, " && (", sellPercentDifference, " > ", float64(3), " || ", marketRSI, " > ", float64(65), ")")
+// log.Println(market.Close > marketUpperBand, market.Close < market.Open, market.Price < market.LastPrice, sellPercentDifference > float64(3), marketRSI > float64(65))
+// }
+
+//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
+// sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
+
+//if market.Close >= marketUpperBand && market.Close < market.Open && sellPercentDifference > float64(2) && marketRSI >= float64(70) {}
