@@ -201,13 +201,8 @@ func wsHandlerMarketBroadcast() {
 			wsConnMarketsMutex.Lock()
 			for wsConn := range wsConnMarkets {
 				if err := wsConn.WriteJSON(market); err != nil {
-					if err.Error() != "websocket: close sent" {
-						log.Printf("market: %+v", market)
-						log.Println("error writing market json: ", err.Error())
-					} else {
-						delete(wsConnMarkets, wsConn)
-						wsConn.Close()
-					}
+					delete(wsConnMarkets, wsConn)
+					wsConn.Close()
 				}
 			}
 			wsConnMarketsMutex.Unlock()

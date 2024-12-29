@@ -311,12 +311,16 @@ func binanceWSConnect(streamParams []string) (bwConn *websocket.Conn) {
 	streamURL := strings.Join(streamParams, "/")
 	bReq := binanceMarketWSRequest{ID: 1, Method: "SUBSCRIBE", Params: streamParams}
 
+	// websocket.DefaultDialer.HandshakeTimeout = time.Minute
 	if bwConn, _, err = websocket.DefaultDialer.Dial(binanceWebsocketURL+streamURL, nil); err != nil {
 		log.Println("dial:", err)
 	}
 
 	if bwConn == nil {
-		log.Println("websocket connection error")
+		time.Sleep(time.Second * 5)
+		if bwConn, _, err = websocket.DefaultDialer.Dial(binanceWebsocketURL+streamURL, nil); err != nil {
+			log.Println("second dial:", err)
+		}
 		return
 	}
 
