@@ -84,7 +84,7 @@ func apiStrategyStopLossTakeProfit() {
 
 			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
 			analysis := getAnalysis(oldOrder.Pair, oldOrder.Exchange)
-			analysisTimeframe := "5m"
+			analysisTimeframe := DefaultTimeframe
 			analysisInterval := utils.Summary{}
 			if analysis.Intervals[analysisTimeframe].Timeframe == analysisTimeframe {
 				analysisInterval = analysis.Intervals[analysisTimeframe]
@@ -99,21 +99,25 @@ func apiStrategyStopLossTakeProfit() {
 			}
 
 			marketRSI := analysisInterval.RSI
-			marketTrend := analysisInterval.Trend
-			marketUpperBand := analysisInterval.BollingerBands["upper"]
-			marketLowerBand := analysisInterval.BollingerBands["lower"]
-			lowestRetracement := analysisInterval.RetracementLevels["0.786"]
-			highestRetracement := analysisInterval.RetracementLevels["0.236"]
+			// marketTrend := analysisInterval.Trend
+			marketSMA10Entry := analysisInterval.SMA10.Entry
+			// marketUpperBand := analysisInterval.BollingerBands["upper"]
+			// marketLowerBand := analysisInterval.BollingerBands["lower"]
+			midRetracement := analysisInterval.RetracementLevels["0.500"]
+			// lowestRetracement := analysisInterval.RetracementLevels["0.786"]
+			// highestRetracement := analysisInterval.RetracementLevels["0.236"]
 
 			switch oldOrder.Side {
 			case "BUY": //CHECK TO SELL BACK
 				oldOrder.RefSide = "SELL"
 
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
-				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
+				// sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if market.Open >= marketUpperBand && market.Close < market.Open && sellPercentDifference > float64(2) &&
-					marketRSI > float64(70) && marketTrend == "Strong Bullish" && market.Price > highestRetracement {
+				// if market.Open > marketUpperBand && market.Close < market.Open && sellPercentDifference > float64(2) &&
+				// 	marketRSI > float64(70) && marketTrend == "Strong Bullish" && market.Price > highestRetracement {
+
+				if market.Open > marketSMA10Entry && market.Close < market.Open && market.Price > midRetracement {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -134,10 +138,12 @@ func apiStrategyStopLossTakeProfit() {
 				oldOrder.RefSide = "BUY"
 
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
-				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
+				// buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if market.Open <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) &&
-					marketRSI < float64(30) && marketTrend == "Strong Bearish" && market.Price < lowestRetracement {
+				// if market.Open <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) &&
+				// 	marketRSI < float64(30) && marketTrend == "Strong Bearish" && market.Price < lowestRetracement {
+
+				if market.Open < marketSMA10Entry && market.Close > market.Open && market.Price < midRetracement {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
