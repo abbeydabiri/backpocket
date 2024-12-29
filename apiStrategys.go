@@ -27,19 +27,19 @@ func apiStrategyStopLossTakeProfit() {
 
 	for orderbook := range chanStoplossTakeProfit {
 
-		orderbookPair := ""
-		var orderbookBidPrice, orderbookAskPrice, orderBookBidsBaseTotal, orderBookAsksBaseTotal float64
+		var orderbookBidPrice, orderbookAskPrice float64
+		// orderBookBidsBaseTotal, orderBookAsksBaseTotal float64
 
 		orderbookMutex.RLock()
-		orderbookPair = orderbook.Pair
+		orderbookPair := orderbook.Pair
 		if len(orderbook.Bids) > 0 {
 			orderbookBidPrice = orderbook.Bids[0].Price
 		}
 		if len(orderbook.Asks) > 0 {
 			orderbookAskPrice = orderbook.Asks[0].Price
 		}
-		orderBookBidsBaseTotal = orderbook.BidsBaseTotal
-		orderBookAsksBaseTotal = orderbook.AsksBaseTotal
+		// orderBookBidsBaseTotal = orderbook.BidsBaseTotal
+		// orderBookAsksBaseTotal = orderbook.AsksBaseTotal
 		orderbookMutex.RUnlock()
 
 		if orderbookBidPrice == 0 || orderbookAskPrice == 0 {
@@ -84,7 +84,7 @@ func apiStrategyStopLossTakeProfit() {
 
 			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
 			analysis := getAnalysis(oldOrder.Pair, oldOrder.Exchange)
-			analysisTimeframe := DefaultTimeframe
+			analysisTimeframe := "3m"
 			analysisInterval := utils.Summary{}
 			if analysis.Intervals[analysisTimeframe].Timeframe == analysisTimeframe {
 				analysisInterval = analysis.Intervals[analysisTimeframe]
