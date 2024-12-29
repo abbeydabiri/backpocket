@@ -99,46 +99,22 @@ func apiStrategyStopLossTakeProfit() {
 			}
 
 			marketRSI := analysisInterval.RSI
+			marketTrend := analysisInterval.Trend
 			marketUpperBand := analysisInterval.BollingerBands["upper"]
 			marketLowerBand := analysisInterval.BollingerBands["lower"]
+			lowestRetracement := analysisInterval.RetracementLevels["0.786"]
+			highestRetracement := analysisInterval.RetracementLevels["0.236"]
 
 			switch oldOrder.Side {
 			case "BUY": //CHECK TO SELL BACK
 				oldOrder.RefSide = "SELL"
 
-				// if market.Close < market.Open && market.Price < market.LastPrice {
-				// if market.Price < market.LastPrice && market.Close > market.Open {
-				// if market.Close < market.Open && market.Price < market.LastPrice && market.LastPrice < market.LowerBand {
-
-				/*
-					*Best Time to Sell:*
-
-					Sell at the Upper Band:
-						When the Current Price touches or exceeds the Upper Bollinger Band, it signals potential overbought conditions.
-
-					Volume Confirmation:
-						Check for decreasing volume or signs of a reversal (e.g., red candles forming after hitting the Upper Band).
-
-					Overbought Signals:
-						Use RSI > 70 to confirm overbought conditions.
-				*/
-
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				// if market.Pair == "XRPUSDT" && market.RSI > 0 {
-				// log.Printf("\n\n\n")
-				// log.Println("market: ", market.Pair, " - CHECK TO SELL BACK - ",
-				// 	market.Close > marketUpperBand && market.Close < market.Open && market.Price < market.LastPrice && (sellPercentDifference > float64(3) || marketRSI > float64(65)))
-
-				// log.Println("market.Close > marketUpperBand && market.Close < market.Open && market.Price < market.LastPrice && sellPercentDifference > float64(3) || marketRSI > float64(65)")
-				// log.Println(market.Close, " > ", marketUpperBand, " && ", market.Close, " < ", market.Open, " && ", market.Price, " < ", market.LastPrice, " && (", sellPercentDifference, " > ", float64(3), " || ", marketRSI, " > ", float64(65), ")")
-				// log.Println(market.Close > marketUpperBand, market.Close < market.Open, market.Price < market.LastPrice, sellPercentDifference > float64(3), marketRSI > float64(65))
-				// }
-
-				if market.Close >= marketUpperBand && market.Close < market.Open && sellPercentDifference > float64(2) && marketRSI >= float64(70) {
+				if market.Open >= marketUpperBand && market.Close < market.Open && sellPercentDifference > float64(2) &&
+					marketRSI > float64(70) && marketTrend == "Strong Bullish" && market.Price > highestRetracement {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
-					// log.Println("TRIGGER SELL: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
 						oldOrder.RefTripped = fmt.Sprintf("> %.3f%% TP: %.8f @ RSI %.2f", newTakeprofit, orderbookBidPrice, marketRSI)
@@ -157,44 +133,12 @@ func apiStrategyStopLossTakeProfit() {
 			case "SELL": //CHECK TO BUY BACK
 				oldOrder.RefSide = "BUY"
 
-				// if market.Close > market.Open && market.Price > market.LastPrice {
-				// if market.Price > market.LastPrice && market.Close < market.Open {
-				// if market.Close > market.Open && market.Price > market.LastPrice && market.LastPrice > market.MiddleBand {
-
-				/*
-					*Best Time to Buy:*
-
-					Buy at the Lower Band:
-						When the Current Price touches or dips below the Lower Bollinger Band, it signals that the price is potentially oversold.
-						Look for confirmation that the price is starting to rebound (e.g., a green candle forming on the next tick).
-
-					Volume Confirmation:
-						High volume on the bounce indicates strong buying interest.
-
-					Oversold Signals:
-						Use a complementary indicator like RSI (Relative Strength Index) to confirm oversold conditions (e.g., RSI < 30).
-
-					Avoid Buying in a Downtrend:
-						If the price continues to hug or break through the Lower Band, wait until it stabilizes above the band before entering.
-				*/
-
-				// if market.Pair == "XRPUSDT" && marketRSI > 0 {
-				// 	fmt.Printf("\n\n\n")
-				// 	fmt.Println("market: ", market.Pair, " - CHECK TO BUY BACK - ",
-				// 		market.Close <= marketLowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && marketRSI < float64(30))
-
-				// 	fmt.Println("market.Close <= marketLowerBand && market.Close > market.Open && market.Price > market.LastPrice && orderBookBidsBaseTotal > orderBookAsksBaseTotal && marketRSI < float64(30)")
-				// 	fmt.Println(market.Close, " <= ", marketLowerBand, " && ", market.Close, " > ", market.Open, " && ", market.Price, " > ", market.LastPrice, " && ", orderBookBidsBaseTotal, " > ", orderBookAsksBaseTotal, " && ", marketRSI, " < ", float64(30))
-				// 	fmt.Println(market.Close <= marketLowerBand, market.Close > market.Open, market.Price > market.LastPrice, orderBookBidsBaseTotal > orderBookAsksBaseTotal, marketRSI < float64(30))
-				// }
-
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				// if market.Close < marketLowerBand && market.Close > market.Open && market.Price > market.LastPrice && (buyPercentDifference > float64(3) || marketRSI < float64(35)) {
-				if market.Close <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) && marketRSI <= float64(30) {
+				if market.Open <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) &&
+					marketRSI < float64(30) && marketTrend == "Strong Bearish" && market.Price < lowestRetracement {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
-					// log.Println("TRIGGER BUY: ", oldOrder.OrderID, " [-] Market: ", market.Pair, " [-] newTakeprofit: ", newTakeprofit, " [-] oldTakeprofit: ", oldOrder.Takeprofit)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
 						oldOrder.RefTripped = fmt.Sprintf("< %.3f%% TP: %.8f @ RSI %.2f", newTakeprofit, orderbookAskPrice, marketRSI)
