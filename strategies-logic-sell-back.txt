@@ -1,8 +1,12 @@
 //CHECK TO SELL BACK -> // SELLING LOGIC
 
+Strong Bullish
+Open Lower than Lowest RetracementLevels
+Red Candle
+
 //Check RSI > 30
 //Overall Trend == "Strong Bullish"
-//Price higher than lowest retracement level
+//Price higher than mid retracement level
 //Candle is Red
 
 if market.Close >= marketUpperBand && market.Close < market.Open && buyPercentDifference > float64(2) &&

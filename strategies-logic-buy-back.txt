@@ -1,7 +1,12 @@
 //CHECK TO BUY BACK -> // BUYING LOGIC
 
+--
+Strong Bearish
+Open Higher than Highest RetracementLevels
+Green Candle
+
 //Overall Trend == "Strong Bearish"
-//Price lower than lowest retracement level
+//Price lower than mid retracement level
 //Check RSI < 30
 //Candle is Green
 
