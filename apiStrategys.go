@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DefaultTimeframe = "1m"
+	DefaultTimeframe = "3m"
 )
 
 var (
@@ -84,7 +84,7 @@ func apiStrategyStopLossTakeProfit() {
 
 			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
 			analysis := getAnalysis(oldOrder.Pair, oldOrder.Exchange)
-			analysisTimeframe := "3m"
+			analysisTimeframe := DefaultTimeframe
 			analysisInterval := utils.Summary{}
 			if analysis.Intervals[analysisTimeframe].Timeframe == analysisTimeframe {
 				analysisInterval = analysis.Intervals[analysisTimeframe]

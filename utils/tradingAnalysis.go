@@ -194,9 +194,9 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		analysis50 = analyzeTrend(data, period50)
 	}
 
-	rsiLength := 14
+	rsiLength := 15
 	if rsiLength > len(data.Close) {
-		rsiLength = len(data.Close) - 1
+		rsiLength = len(data.Close) - 2
 	}
 	smoothedRSI := CalculateSmoothedRSI(data.Close, rsiLength, 5)
 	bollingerbands := calculateBollingerBands(data.Close, period20, 2)
