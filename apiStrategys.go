@@ -104,7 +104,7 @@ func apiStrategyStopLossTakeProfit() {
 			// marketUpperBand := analysisInterval.BollingerBands["upper"]
 			// marketLowerBand := analysisInterval.BollingerBands["lower"]
 			midRetracement := analysisInterval.RetracementLevels["0.500"]
-			// lowestRetracement := analysisInterval.RetracementLevels["0.786"]
+			lowestRetracement := analysisInterval.RetracementLevels["0.786"]
 			// highestRetracement := analysisInterval.RetracementLevels["0.236"]
 
 			switch oldOrder.Side {
@@ -117,7 +117,7 @@ func apiStrategyStopLossTakeProfit() {
 				// if market.Open > marketUpperBand && market.Close < market.Open && sellPercentDifference > float64(2) &&
 				// 	marketRSI > float64(70) && marketTrend == "Strong Bullish" && market.Price > highestRetracement {
 
-				if marketTrend == "Strong Bullish" && market.Price <= midRetracement && market.Close < market.Open {
+				if marketTrend == "Strong Bullish" && market.Open < lowestRetracement && market.Close < market.Open {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -143,7 +143,7 @@ func apiStrategyStopLossTakeProfit() {
 				// if market.Open <= marketLowerBand && market.Close > market.Open && buyPercentDifference > float64(2) &&
 				// 	marketRSI < float64(30) && marketTrend == "Strong Bearish" && market.Price < lowestRetracement {
 
-				if marketTrend == "Strong Bearish" && market.Price >= midRetracement && market.Close > market.Open {
+				if marketTrend == "Strong Bearish" && market.Open > midRetracement && market.Close > market.Open {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
