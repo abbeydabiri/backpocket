@@ -54,13 +54,13 @@ type Summary struct {
 	Timeframe         string
 	Trend             string
 	RSI               float64
-	Candle            summaryCandle
 	Pattern           summaryPattern
 	BollingerBands    map[string]float64
 	SMA10             trendAnalysis
 	SMA20             trendAnalysis
 	SMA50             trendAnalysis
 	RetracementLevels map[string]float64
+	Candle            summaryCandle
 }
 
 // analyzeTrend identifies the trend based on SMA and price action.
