@@ -128,7 +128,7 @@ func apiStrategyStopLossTakeProfit() {
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
 				if marketTrend == "Strong Bullish" && isMarketResistance && market.Close < analysisInterval.Open &&
-					market.Close <= higherRetracement && sellPercentDifference > float64(5) && marketRSI > float64(70) {
+					market.Close <= higherRetracement && sellPercentDifference > float64(5) && marketRSI > float64(55) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -152,7 +152,7 @@ func apiStrategyStopLossTakeProfit() {
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
 				if marketTrend == "Strong Bearish" && isMarketSupport && market.Close > analysisInterval.Open &&
-					market.Close >= lowerRetracement && buyPercentDifference > float64(5) && marketRSI < float64(30) {
+					market.Close >= lowerRetracement && buyPercentDifference > float64(5) && marketRSI < float64(45) {
 
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
