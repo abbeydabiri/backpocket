@@ -99,6 +99,14 @@ func calculateFibonacciRetracement(high, low float64) map[string]float64 {
 
 // CalculateSmoothedRSI computes a smoothed RSI using SMA or EMA.
 func CalculateSmoothedRSI(closePrices []float64, rsiPeriod int, smoothingPeriod int) float64 {
+	if len(closePrices) < 2 {
+		return 0
+	}
+
+	if len(closePrices) < rsiPeriod {
+		rsiPeriod = len(closePrices) - 1
+	}
+
 	// Calculate standard RSI
 	standardRSI := talib.Rsi(closePrices, rsiPeriod)
 
@@ -194,10 +202,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		analysis50 = analyzeTrend(data, period50)
 	}
 
-	rsiLength := 15
-	if rsiLength > len(data.Close) {
-		rsiLength = len(data.Close) - 2
-	}
+	rsiLength := 14
 	smoothedRSI := CalculateSmoothedRSI(data.Close, rsiLength, 5)
 	bollingerbands := calculateBollingerBands(data.Close, period20, 2)
 
