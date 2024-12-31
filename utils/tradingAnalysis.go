@@ -37,6 +37,10 @@ type Summary struct {
 	Timeframe         string
 	Trend             string
 	RSI               float64
+	Open              float64
+	Close             float64
+	High              float64
+	Low               float64
 	BollingerBands    map[string]float64
 	SMA10             trendAnalysis
 	SMA20             trendAnalysis
@@ -210,6 +214,10 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	return Summary{
 		Timeframe:      timeframe,
 		Trend:          trendName,
+		Open:           data.Open[len(data.Open)-1],
+		Close:          data.Close[len(data.Close)-1],
+		High:           data.High[len(data.High)-1],
+		Low:            data.Low[len(data.Low)-1],
 		SMA10:          analysis10,
 		SMA20:          analysis20,
 		SMA50:          analysis50,
