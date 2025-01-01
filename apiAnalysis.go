@@ -91,7 +91,7 @@ func wsHandlerAnalysisBroadcast() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Second * 15)
+		ticker := time.NewTicker(time.Second * 5)
 		defer ticker.Stop()
 		for ; true; <-ticker.C {
 			analysisListMutex.RLock()

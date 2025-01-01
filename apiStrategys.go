@@ -98,9 +98,6 @@ func apiStrategyStopLossTakeProfit() {
 				}
 			}
 
-			analysis.Trend = utils.TimeframeTrends(analysis.Intervals, market.Close)
-			updateAnalysis(analysis)
-
 			marketRSI := analysisInterval.RSI
 			marketTrend := analysisInterval.Trend
 			// marketSMA10Entry := analysisInterval.SMA10.Entry
@@ -220,6 +217,12 @@ func calculateBollingerBands(market *models.Market) {
 		market.MiddleBand = analysis.Intervals[DefaultTimeframe].BollingerBands["middle"]
 		market.LowerBand = analysis.Intervals[DefaultTimeframe].BollingerBands["lower"]
 	}
+	for _, interval := range analysis.Intervals {
+		interval.Trend = utils.OverallTrend(interval.SMA10.Entry,
+			interval.SMA20.Entry, interval.SMA50.Entry, market.Close)
+	}
+	analysis.Trend = utils.TimeframeTrends(analysis.Intervals, market.Close)
+	updateAnalysis(analysis)
 }
 
 func calculateRSIBands(market *models.Market) {
