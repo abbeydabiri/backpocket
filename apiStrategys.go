@@ -126,7 +126,8 @@ func apiStrategyStopLossTakeProfit() {
 
 				if overallTrend == "Bullish" && strings.Contains(chartPattern, "Bearish") &&
 					isMarketResistance && market.Close < analysisInterval.Candle.Open &&
-					market.Close < midRetracement && sellPercentDifference > float64(5) {
+					market.Price < market.LastPrice && market.Close < midRetracement &&
+					sellPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -151,7 +152,8 @@ func apiStrategyStopLossTakeProfit() {
 
 				if overallTrend == "Bearish" && strings.Contains(chartPattern, "Bullish") &&
 					isMarketSupport && market.Close > analysisInterval.Candle.Open &&
-					market.Close > midRetracement && buyPercentDifference > float64(5) {
+					market.Price > market.LastPrice && market.Close > midRetracement &&
+					buyPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
