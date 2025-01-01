@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/markcheno/go-talib"
 )
@@ -145,69 +144,91 @@ func calculateBollingerBands(closePrices []float64, period int, stdDev float64) 
 }
 
 // identifyCandlestickPattern detects candlestick patterns
-func identifyCandlestickPattern(current, previous Candle) string {
-	bodySize := math.Abs(current.Close - current.Open)
-	totalRange := current.High - current.Low
-
-	// Bullish Engulfing Pattern
-	if previous.Close < previous.Open && current.Close > current.Open &&
-		current.Close > previous.Open && current.Open < previous.Close {
-		return "Bullish Engulfing"
+func identifyCandlestickPattern(candles []Candle) string {
+	if len(candles) < 3 {
+		return ""
 	}
 
-	// Bearish Engulfing Pattern
-	if previous.Close > previous.Open && current.Close < current.Open &&
-		current.Open > previous.Close && current.Close < previous.Open {
-		return "Bearish Engulfing"
+	latest := candles[len(candles)-1]
+	penultimate := candles[len(candles)-2]
+
+	// Bullish Hammer
+	if isHammer(latest) {
+		return "Hammer (Bullish)"
 	}
 
-	// Shooting Star Pattern
-	if (current.High-current.Close) > 2*bodySize && bodySize < 0.2*totalRange && (current.Close-current.Low) < 0.2*totalRange {
-		return "Shooting Star"
+	// Shooting Star
+	if isShootingStar(latest) {
+		return "Shooting Star (Bearish)"
 	}
 
-	// Hammer Pattern
-	if (current.Open-current.Low) > 2*bodySize && bodySize < 0.2*totalRange && (current.High-current.Close) < 0.2*totalRange {
-		return "Hammer"
+	// Bullish Engulfing
+	if isEngulfingBullish(penultimate, latest) {
+		return "Engulfing Bullish"
 	}
 
-	// Doji Pattern
-	if math.Abs(current.Open-current.Close) <= 0.1*totalRange {
-		return "Doji"
+	// Bearish Engulfing
+	if isEngulfingBearish(penultimate, latest) {
+		return "Engulfing Bearish"
+	}
+
+	// Morning Star
+	if len(candles) >= 3 && isMorningStar(candles[len(candles)-3:]) {
+		return "Morning Star (Bullish)"
+	}
+
+	// Evening Star
+	if len(candles) >= 3 && isEveningStar(candles[len(candles)-3:]) {
+		return "Evening Star (Bearish)"
 	}
 
 	return ""
 }
 
 // detectChartPatterns analyzes the given price data to identify patterns
-func detectChartPatterns(prices []float64) string {
-	if len(prices) < 3 {
-		return ""
-	}
+func detectChartPatterns(prices, highs, lows []float64) string {
 
-	// Detect V Pattern
-	if prices[0] > prices[1] && prices[1] < prices[2] {
+	if isVPattern(prices) {
 		return "V Pattern (Bullish Reversal)"
 	}
-
-	// Detect Inverted V Pattern
-	if prices[0] < prices[1] && prices[1] > prices[2] {
+	if isInvertedVPattern(prices) {
 		return "Inverted V Pattern (Bearish Reversal)"
 	}
-
-	// Detect Head and Shoulders Pattern
-	if len(prices) >= 5 && prices[0] < prices[1] && prices[1] > prices[2] && prices[2] < prices[3] && prices[3] > prices[4] {
+	if isHeadAndShoulders(prices) {
 		return "Head and Shoulders (Bearish Reversal)"
 	}
-
-	// Detect Double Top Pattern
-	if len(prices) >= 4 && math.Abs(prices[0]-prices[2]) < 0.01 && prices[1] > prices[0] && prices[3] < prices[0] {
+	if isInverseHeadAndShoulders(prices) {
+		return "Inverse Head and Shoulders (Bullish Reversal)"
+	}
+	if isDoubleTop(prices) {
 		return "Double Top (Bearish Reversal)"
 	}
-
-	// Detect Double Bottom Pattern
-	if len(prices) >= 4 && math.Abs(prices[0]-prices[2]) < 0.01 && prices[1] < prices[0] && prices[3] > prices[0] {
+	if isDoubleBottom(prices) {
 		return "Double Bottom (Bullish Reversal)"
+	}
+	if isRisingWedge(highs, lows) {
+		return "Rising Wedge (Bearish Reversal)"
+	}
+	if isFallingWedge(highs, lows) {
+		return "Falling Wedge (Bullish Reversal)"
+	}
+	if isFlag(prices) {
+		return "Flag (Continuation)"
+	}
+	if isPennant(highs, lows) {
+		return "Pennant (Continuation)"
+	}
+	if isRectangle(prices) {
+		return "Rectangle (Continuation)"
+	}
+	if isSymmetricalTriangle(highs, lows) {
+		return "Symmetrical Triangle (Neutral)"
+	}
+	if isAscendingTriangle(highs, lows) {
+		return "Ascending Triangle (Neutral)"
+	}
+	if isDescendingTriangle(highs, lows) {
+		return "Descending Triangle (Neutral)"
 	}
 
 	return ""
@@ -242,7 +263,7 @@ func TimeframeTrends(intervals map[string]Summary) string {
 	totalScore := 0
 	threshHold := 14
 	timeWeights := map[string]int{
-		"1m": 5, "3m": 5, "5m": 4, "15m": 3, "30m": 2, "4h": 1, "1d": 1,
+		"1m": 5, "3m": 4, "5m": 4, "15m": 3, "30m": 2, "4h": 1, "1d": 1,
 	}
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]
@@ -302,27 +323,32 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	smoothedRSI := CalculateSmoothedRSI(data.Close, rsiLength, 5)
 	bollingerbands := calculateBollingerBands(data.Close, period20, 2)
 
+	chartPattern := ""
 	candlePattern := ""
-	var currentCandle, prevCandle1, prevCandle2 Candle
-	chartPattern := detectChartPatterns(data.Close)
 
+	if len(data.Close) >= 10 {
+		candleArray := []Candle{}
+		last10Close := data.Close[len(data.Close)-10:]
+		last10Open := data.Open[len(data.Open)-10:]
+		last10High := data.High[len(data.High)-10:]
+		last10Low := data.Low[len(data.Low)-10:]
+		for i := 0; i > len(last10Close); i++ {
+			candleArray = append(candleArray, Candle{
+				Close: last10Close[i],
+				Open:  last10Open[i],
+				High:  last10High[i],
+				Low:   last10Low[i],
+			})
+		}
+		candlePattern = detectChartPatterns(last10Close, last10High, last10Low)
+		candlePattern = identifyCandlestickPattern(candleArray)
+	}
+
+	var currentCandle Candle
 	currentCandle.Close = data.Close[len(data.Close)-1]
 	currentCandle.High = data.High[len(data.High)-1]
 	currentCandle.Low = data.Low[len(data.Low)-1]
 	currentCandle.Open = data.Open[len(data.Open)-1]
-
-	if len(data.Close) > 3 {
-		prevCandle1.Close = data.Close[len(data.Close)-2]
-		prevCandle1.High = data.High[len(data.High)-2]
-		prevCandle1.Low = data.Low[len(data.Low)-2]
-		prevCandle1.Open = data.Open[len(data.Open)-2]
-
-		prevCandle2.Close = data.Close[len(data.Close)-3]
-		prevCandle2.High = data.High[len(data.High)-3]
-		prevCandle2.Low = data.Low[len(data.Low)-3]
-		prevCandle2.Open = data.Open[len(data.Open)-3]
-		candlePattern = identifyCandlestickPattern(prevCandle1, prevCandle2)
-	}
 
 	trendName := OverallTrend(analysis10.Entry, analysis20.Entry, analysis50.Entry, currentCandle.Close)
 	return Summary{
