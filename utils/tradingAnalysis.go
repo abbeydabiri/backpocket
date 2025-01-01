@@ -146,7 +146,7 @@ func calculateBollingerBands(closePrices []float64, period int, stdDev float64) 
 // identifyCandlestickPattern detects candlestick patterns
 func identifyCandlestickPattern(candles []Candle) string {
 	if len(candles) < 3 {
-		return ""
+		return "Candles less than 3"
 	}
 
 	latest := candles[len(candles)-1]
@@ -192,13 +192,13 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 		return "V Pattern (Bullish Reversal)"
 	}
 	if isInvertedVPattern(prices) {
-		return "Inverted V Pattern (Bearish Reversal)"
+		return "V Pattern (Bearish Reversal)"
 	}
 	if isHeadAndShoulders(prices) {
 		return "Head and Shoulders (Bearish Reversal)"
 	}
 	if isInverseHeadAndShoulders(prices) {
-		return "Inverse Head and Shoulders (Bullish Reversal)"
+		return "Head and Shoulders (Bullish Reversal)"
 	}
 	if isDoubleTop(prices) {
 		return "Double Top (Bearish Reversal)"
@@ -332,7 +332,9 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		last10Open := data.Open[len(data.Open)-10:]
 		last10High := data.High[len(data.High)-10:]
 		last10Low := data.Low[len(data.Low)-10:]
-		for i := 0; i > len(last10Close); i++ {
+
+		//pick last 3 exclude the latest candle
+		for i := len(last10Close) - 4; i < (len(last10Close) - 1); i++ {
 			candleArray = append(candleArray, Candle{
 				Close: last10Close[i],
 				Open:  last10Open[i],
@@ -340,7 +342,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 				Low:   last10Low[i],
 			})
 		}
-		candlePattern = detectChartPatterns(last10Close, last10High, last10Low)
+		chartPattern = detectChartPatterns(last10Close, last10High, last10Low)
 		candlePattern = identifyCandlestickPattern(candleArray)
 	}
 
