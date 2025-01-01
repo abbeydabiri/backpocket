@@ -237,16 +237,16 @@ func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
 }
 
 // TimeframetTrends
-func TimeframeTrends(intervals map[string]Summary, curPrice float64) string {
+func TimeframeTrends(intervals map[string]Summary) string {
 	trendName := ""
 	totalScore := 0
-	threshHold := 15
+	threshHold := 14
 	timeWeights := map[string]int{
-		"1m": 5, "3m": 4, "5m": 4, "15m": 3, "30m": 2, "4h": 1, "1d": 1,
+		"1m": 5, "3m": 5, "5m": 4, "15m": 3, "30m": 2, "4h": 1, "1d": 1,
 	}
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]
-		trendName = OverallTrend(interval.SMA10.Entry, interval.SMA20.Entry, interval.SMA50.Entry, curPrice)
+		trendName = OverallTrend(interval.SMA10.Entry, interval.SMA20.Entry, interval.SMA50.Entry, interval.Candle.Close)
 		trendScore := 0
 		if trendName == Bullish {
 			trendScore = 1 * multiplier
