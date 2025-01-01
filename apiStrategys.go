@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DefaultTimeframe = "3m"
+	DefaultTimeframe = "1m"
 )
 
 var (
