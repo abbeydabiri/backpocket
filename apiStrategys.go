@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -100,9 +101,9 @@ func apiStrategyStopLossTakeProfit() {
 
 			marketRSI := analysisInterval.RSI
 			overallTrend := analysis.Trend
+			chartPattern := analysisInterval.Pattern.Chart
 
-			lowerRetracement := analysisInterval.RetracementLevels["0.618"]
-			higherRetracement := analysisInterval.RetracementLevels["0.382"]
+			midRetracement := analysisInterval.RetracementLevels["0.500"]
 
 			isMarketSupport := false
 			if analysisInterval.SMA10.Support == analysisInterval.SMA20.Support &&
@@ -123,8 +124,10 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if overallTrend == "Bullish" && isMarketResistance && market.Close < analysisInterval.Candle.Open &&
-					market.Close <= higherRetracement && sellPercentDifference > float64(5) {
+				if overallTrend == "Bullish" && strings.Contains(chartPattern, "Bearish") &&
+					isMarketResistance && market.Close < analysisInterval.Candle.Open &&
+					market.Price < market.LastPrice && market.Close < midRetracement &&
+					sellPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -147,8 +150,10 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if overallTrend == "Bearish" && isMarketSupport && market.Close > analysisInterval.Candle.Open &&
-					market.Close >= lowerRetracement && buyPercentDifference > float64(5) {
+				if overallTrend == "Bearish" && strings.Contains(chartPattern, "Bullish") &&
+					isMarketSupport && market.Close > analysisInterval.Candle.Open &&
+					market.Price > market.LastPrice && market.Close > midRetracement &&
+					buyPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
