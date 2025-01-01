@@ -264,8 +264,7 @@ func retrieveMarketPairAnalysis(pair, exchange, limit, endTime, startTime, inter
 
 	//calculate overall time frame trends
 	//
-	closePrice := analysis.Intervals[DefaultTimeframe].Candle.Close
-	analysis.Trend = utils.TimeframeTrends(analysis.Intervals, closePrice)
+	analysis.Trend = utils.TimeframeTrends(analysis.Intervals)
 
 	return
 }
