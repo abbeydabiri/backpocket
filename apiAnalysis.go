@@ -16,6 +16,7 @@ import (
 
 type analysisType struct {
 	Pair      string
+	Trend     string
 	Exchange  string
 	Intervals map[string]utils.Summary
 }
@@ -260,6 +261,11 @@ func retrieveMarketPairAnalysis(pair, exchange, limit, endTime, startTime, inter
 			marketRSIPricesMutex.Unlock()
 		}
 	}
+
+	//calculate overall time frame trends
+	//
+	closePrice := analysis.Intervals[DefaultTimeframe].Candle.Close
+	analysis.Trend = utils.TimeframeTrends(analysis.Intervals, closePrice)
 
 	return
 }

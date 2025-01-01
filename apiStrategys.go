@@ -98,6 +98,9 @@ func apiStrategyStopLossTakeProfit() {
 				}
 			}
 
+			analysis.Trend = utils.TimeframeTrends(analysis.Intervals, market.Close)
+			updateAnalysis(analysis)
+
 			marketRSI := analysisInterval.RSI
 			marketTrend := analysisInterval.Trend
 			// marketSMA10Entry := analysisInterval.SMA10.Entry
@@ -127,7 +130,7 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if marketTrend == "Strong Bullish" && isMarketResistance && market.Close < analysisInterval.Candle.Current.Open &&
+				if marketTrend == "Bullish" && isMarketResistance && market.Close < analysisInterval.Candle.Open &&
 					market.Close <= higherRetracement && sellPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
@@ -151,7 +154,7 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if marketTrend == "Strong Bearish" && isMarketSupport && market.Close > analysisInterval.Candle.Current.Open &&
+				if marketTrend == "Bearish" && isMarketSupport && market.Close > analysisInterval.Candle.Open &&
 					market.Close >= lowerRetracement && buyPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
