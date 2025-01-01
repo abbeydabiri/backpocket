@@ -215,20 +215,20 @@ func detectChartPatterns(prices []float64) string {
 
 func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
 
-	if trend10 > trend20 && trend20 > trend50 && curPrice > trend10 {
+	if trend10 >= trend20 && trend20 >= trend50 && curPrice >= trend10 {
 		return Bullish
 	}
 
-	if trend10 < trend20 && trend20 < trend50 && curPrice < trend10 {
+	if trend10 <= trend20 && trend20 <= trend50 && curPrice <= trend10 {
 		return Bearish
 	}
 
 	if trend50 == 0 {
-		if trend10 > trend20 && curPrice > trend10 {
+		if trend10 >= trend20 && curPrice >= trend10 {
 			return Bullish
 		}
 
-		if trend10 < trend20 && curPrice < trend10 {
+		if trend10 <= trend20 && curPrice <= trend10 {
 			return Bearish
 		}
 	}
@@ -242,7 +242,7 @@ func TimeframeTrends(intervals map[string]Summary, curPrice float64) string {
 	totalScore := 0
 	threshHold := 10
 	timeWeights := map[string]int{
-		"1m": 1, "3m": 1, "5m": 2, "15m": 2, "30m": 3, "4h": 5, "1d": 7,
+		"1m": 1, "3m": 1, "5m": 2, "15m": 3, "30m": 3, "4h": 5, "1d": 7,
 	}
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]
