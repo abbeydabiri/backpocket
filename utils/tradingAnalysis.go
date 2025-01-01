@@ -240,9 +240,9 @@ func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
 func TimeframeTrends(intervals map[string]Summary, curPrice float64) string {
 	trendName := ""
 	totalScore := 0
-	threshHold := 7
+	threshHold := 15
 	timeWeights := map[string]int{
-		"1m": 1, "3m": 1, "5m": 2, "15m": 3, "30m": 3, "4h": 5, "1d": 7,
+		"1m": 5, "3m": 4, "5m": 4, "15m": 3, "30m": 2, "4h": 1, "1d": 1,
 	}
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]
