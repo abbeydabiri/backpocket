@@ -100,7 +100,7 @@ func apiStrategyStopLossTakeProfit() {
 			}
 
 			marketRSI := analysisInterval.RSI
-			overallTrend := analysis.Trend
+			timeframeTrend := analysisInterval.Trend
 			chartPattern := analysisInterval.Pattern.Chart
 
 			midRetracement := analysisInterval.RetracementLevels["0.500"]
@@ -124,10 +124,10 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if overallTrend == "Bullish" && strings.Contains(chartPattern, "Bearish") &&
+				if timeframeTrend == "Bullish" && strings.Contains(chartPattern, "Bearish") &&
 					isMarketResistance && market.Close < analysisInterval.Candle.Open &&
 					market.Price < market.LastPrice && market.Close < midRetracement &&
-					sellPercentDifference > float64(5) {
+					sellPercentDifference > float64(5) && marketRSI > float64(65) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -150,10 +150,10 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if overallTrend == "Bearish" && strings.Contains(chartPattern, "Bullish") &&
+				if timeframeTrend == "Bearish" && strings.Contains(chartPattern, "Bullish") &&
 					isMarketSupport && market.Close > analysisInterval.Candle.Open &&
 					market.Price > market.LastPrice && market.Close > midRetracement &&
-					buyPercentDifference > float64(5) {
+					buyPercentDifference > float64(5) && marketRSI < float64(35) {
 
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -219,9 +219,9 @@ func calculateBollingerBands(market *models.Market) {
 		market.LowerBand = analysis.Intervals[DefaultTimeframe].BollingerBands["lower"]
 	}
 	for _, interval := range analysis.Intervals {
-		if interval.Timeframe == DefaultTimeframe {
-			interval.Candle.Close = market.Close
-		}
+		// if interval.Timeframe == DefaultTimeframe {
+		interval.Candle.Close = market.Close
+		// }
 		interval.Trend = utils.OverallTrend(interval.SMA10.Entry,
 			interval.SMA20.Entry, interval.SMA50.Entry, interval.Candle.Close)
 	}
