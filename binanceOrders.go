@@ -222,12 +222,17 @@ func binanceUpdateOrder(binanceOrder binanceOrderType) (order models.Order, isne
 		order.Status = binanceOrder.Status
 		executedQty, _ := strconv.ParseFloat(binanceOrder.ExecutedQty, 64)
 		cummulativeQuoteQty, _ := strconv.ParseFloat(binanceOrder.CummulativeQuoteQty, 64)
+
 		if binanceOrder.Status == "CANCELED" && executedQty > 0 {
 			order.Status = "FILLED"
 		}
 
 		order.Quantity = executedQty
 		order.Total = cummulativeQuoteQty
+		if binanceOrder.Status == "NEW" {
+			order.Quantity, _ = strconv.ParseFloat(binanceOrder.OrigQty, 64)
+			order.Total = utils.TruncateFloat(order.Price*order.Quantity, 8)
+		}
 
 		if binanceOrder.Time != 0 {
 			order.Updatedate = time.Unix(binanceOrder.Time/1000, 0)
