@@ -2,6 +2,11 @@ package utils
 
 import "math"
 
+type PatternMatch struct {
+	Pattern string
+	Score   int
+}
+
 // Utility function to calculate slope
 func slope(x1, y1, x2, y2 float64) float64 {
 	return (y2 - y1) / (x2 - x1)
@@ -97,29 +102,62 @@ func isFallingWedge(highs, lows []float64) bool {
 // Flags
 func isFlag(prices []float64) bool {
 	n := len(prices)
-	if n < 4 {
+	if n < 6 {
 		return false
 	}
-	return slope(0, prices[0], float64(n/2), prices[n/2]) > 0 &&
-		isApproxEqual(slope(float64(n/2), prices[n/2], float64(n-1), prices[n-1]), 0, 0.01)
+
+	// Ensure a strong prior trend
+	prevTrend := prices[n-6] < prices[n-5] && prices[n-5] < prices[n-4]
+
+	// Check for consolidation (small range in recent candles)
+	flagConsolidation := math.Abs(prices[n-3]-prices[n-2]) < 0.01 &&
+		math.Abs(prices[n-2]-prices[n-1]) < 0.01
+
+	return prevTrend && flagConsolidation
 }
 
 // Pennants
-func isPennant(highs, lows []float64) bool {
-	if len(highs) < 3 || len(lows) < 3 {
+func isPennant(prices []float64) bool {
+	n := len(prices)
+	if n < 6 {
 		return false
 	}
-	return slope(0, lows[0], 2, lows[2]) > slope(0, highs[0], 2, highs[2])
+
+	// Ensure strong prior trend
+	priorTrend := prices[n-6] < prices[n-5] && prices[n-5] < prices[n-4]
+
+	// Check for converging trendlines (symmetry in recent prices)
+	lowerSlope := slope(0, prices[n-3], 1, prices[n-2])
+	upperSlope := slope(0, prices[n-2], 1, prices[n-1])
+
+	return priorTrend && lowerSlope > 0 && upperSlope < 0 && math.Abs(upperSlope-lowerSlope) < 0.01
 }
 
 // Rectangles
 func isRectangle(prices []float64) bool {
 	n := len(prices)
-	if n < 4 {
+	if n < 6 {
 		return false
 	}
-	return isApproxEqual(prices[0], prices[n-1], 0.01) &&
-		isApproxEqual(prices[n/2], prices[n-1], 0.01)
+
+	// Ensure a prior trend
+	priorTrend := prices[n-6] < prices[n-5] && prices[n-5] < prices[n-4]
+
+	// Check for horizontal consolidation (within a small range)
+	maxPrice := prices[n-3]
+	minPrice := prices[n-3]
+	for i := n - 3; i < n; i++ {
+		if prices[i] > maxPrice {
+			maxPrice = prices[i]
+		}
+		if prices[i] < minPrice {
+			minPrice = prices[i]
+		}
+	}
+
+	consolidation := maxPrice-minPrice < 0.02 // Adjust threshold for range
+
+	return priorTrend && consolidation
 }
 
 // 3. Neutral Patterns
