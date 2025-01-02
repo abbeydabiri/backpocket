@@ -117,7 +117,7 @@ func apiStrategyStopLossTakeProfit() {
 			}
 
 			marketRSI := analysisInterval.RSI
-			overallTrend := analysis.Trend
+			overallTrend := analysisInterval.Trend
 			chartPattern := analysisInterval.Pattern.Chart
 
 			midRetracement := analysisInterval.RetracementLevels["0.500"]
