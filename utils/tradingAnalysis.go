@@ -188,12 +188,6 @@ func identifyCandlestickPattern(candles []Candle) string {
 // detectChartPatterns analyzes the given price data to identify patterns
 func detectChartPatterns(prices, highs, lows []float64) string {
 
-	if isVPattern(prices) {
-		return "V Pattern (Bullish Reversal)"
-	}
-	if isInvertedVPattern(prices) {
-		return "V Pattern (Bearish Reversal)"
-	}
 	if isHeadAndShoulders(prices) {
 		return "Head and Shoulders (Bearish Reversal)"
 	}
@@ -211,6 +205,12 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 	}
 	if isFallingWedge(highs, lows) {
 		return "Falling Wedge (Bullish Reversal)"
+	}
+	if isVPattern(prices) {
+		return "V Pattern (Bullish Reversal)"
+	}
+	if isInvertedVPattern(prices) {
+		return "V Pattern (Bearish Reversal)"
 	}
 	if isFlag(prices) {
 		return "Flag (Continuation)"
@@ -257,13 +257,25 @@ func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
 	return Neutral
 }
 
+/*
+Updated Weighing System
+Time Weight	Reason
+1m		1		Minimally impactful to reduce distortion caused by noise.
+3m		2		Still short-term but slightly more reliable than 1m.
+5m		4		Core short-term time frame for intermediate decision-making.
+15m		5		Key intermediate time frame, heavily weighted for scalping decisions.
+30m		4		Provides confirmation of broader trends for intraday trading.
+4h		3		Useful for context but less weighted due to your day trading style.
+1d		2		Provides long-term perspective but less relevant for scalping.
+*/
+
 // TimeframetTrends
 func TimeframeTrends(intervals map[string]Summary) string {
 	trendName := ""
 	totalScore := 0
-	threshHold := 14
+	threshHold := 10
 	timeWeights := map[string]int{
-		"1m": 5, "3m": 4, "5m": 4, "15m": 3, "30m": 2, "4h": 1, "1d": 1,
+		"1m": 1, "3m": 2, "5m": 4, "15m": 5, "30m": 4, "4h": 3, "1d": 2,
 	}
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]

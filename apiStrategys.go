@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -23,6 +22,24 @@ var (
 
 	chanStoplossTakeProfit = make(chan orderbooks, 10240)
 )
+
+func checkReversalPatterns(overallTrend, pattern string) (match bool) {
+	switch overallTrend {
+	case "Bearish": //check for bullish reversal patterns
+		if pattern == "Falling Wedge (Bullish Reversal)" ||
+			pattern == "Head and Shoulders (Bullish Reversal)" ||
+			pattern == "Double Bottom (Bullish Reversal)" {
+			match = true
+		}
+	case "Bullish": //check for bearish reversal patterns
+		if pattern == "Rising Wedge (Bearish Reversal)" ||
+			pattern == "Head and Shoulders (Bearish Reversal)" ||
+			pattern == "Double Top (Bearish Reversal)" {
+			match = true
+		}
+	}
+	return
+}
 
 func apiStrategyStopLossTakeProfit() {
 
@@ -85,7 +102,7 @@ func apiStrategyStopLossTakeProfit() {
 
 			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
 			analysis := getAnalysis(oldOrder.Pair, oldOrder.Exchange)
-			analysisTimeframe := DefaultTimeframe
+			analysisTimeframe := "3m"
 			analysisInterval := utils.Summary{}
 			if analysis.Intervals[analysisTimeframe].Timeframe == analysisTimeframe {
 				analysisInterval = analysis.Intervals[analysisTimeframe]
@@ -100,7 +117,7 @@ func apiStrategyStopLossTakeProfit() {
 			}
 
 			marketRSI := analysisInterval.RSI
-			timeframeTrend := analysisInterval.Trend
+			overallTrend := analysis.Trend
 			chartPattern := analysisInterval.Pattern.Chart
 
 			midRetracement := analysisInterval.RetracementLevels["0.500"]
@@ -124,10 +141,10 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
 				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 
-				if timeframeTrend == "Bullish" && strings.Contains(chartPattern, "Bearish") &&
+				if overallTrend == "Bullish" && checkReversalPatterns(overallTrend, chartPattern) &&
 					isMarketResistance && market.Close < analysisInterval.Candle.Open &&
 					market.Price < market.LastPrice && market.Close < midRetracement &&
-					sellPercentDifference > float64(5) && marketRSI > float64(65) {
+					sellPercentDifference > float64(5) && marketRSI > float64(70) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -150,7 +167,7 @@ func apiStrategyStopLossTakeProfit() {
 				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
 				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
-				if timeframeTrend == "Bearish" && strings.Contains(chartPattern, "Bullish") &&
+				if overallTrend == "Bearish" && checkReversalPatterns(overallTrend, chartPattern) &&
 					isMarketSupport && market.Close > analysisInterval.Candle.Open &&
 					market.Price > market.LastPrice && market.Close > midRetracement &&
 					buyPercentDifference > float64(5) && marketRSI < float64(35) {
