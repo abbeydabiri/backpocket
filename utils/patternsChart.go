@@ -16,19 +16,23 @@ func isApproxEqual(a, b, tolerance float64) bool {
 // V Pattern (Bullish Reversal)
 func isVPattern(prices []float64) bool {
 	n := len(prices)
-	if n < 3 {
+	if n < 5 {
 		return false
 	}
-	return prices[n-3] > prices[n-2] && prices[n-2] < prices[n-1]
+	// Check if prior trend is downward
+	prevTrend := prices[n-5] > prices[n-4] && prices[n-4] > prices[n-3]
+	return prevTrend && prices[n-3] > prices[n-2] && prices[n-2] < prices[n-1]
 }
 
 // Inverted V Pattern (Bearish Reversal)
 func isInvertedVPattern(prices []float64) bool {
 	n := len(prices)
-	if n < 3 {
+	if n < 5 {
 		return false
 	}
-	return prices[n-3] < prices[n-2] && prices[n-2] > prices[n-1]
+	// Check if prior trend is upward
+	prevTrend := prices[n-5] < prices[n-4] && prices[n-4] < prices[n-3]
+	return prevTrend && prices[n-3] < prices[n-2] && prices[n-2] > prices[n-1]
 }
 
 // Head and Shoulders (Bearish Reversal)
@@ -52,19 +56,25 @@ func isInverseHeadAndShoulders(prices []float64) bool {
 // Double Top (Bearish Reversal)
 func isDoubleTop(prices []float64) bool {
 	n := len(prices)
-	if n < 4 {
+	if n < 5 {
 		return false
 	}
-	return isApproxEqual(prices[n-4], prices[n-2], 0.01) && prices[n-3] < prices[n-4]
+	// Peaks must be approximately equal, with a dip between
+	return isApproxEqual(prices[n-5], prices[n-3], 0.01) &&
+		prices[n-4] < prices[n-5] &&
+		prices[n-4] < prices[n-3]
 }
 
 // Double Bottom (Bullish Reversal)
 func isDoubleBottom(prices []float64) bool {
 	n := len(prices)
-	if n < 4 {
+	if n < 5 {
 		return false
 	}
-	return isApproxEqual(prices[n-4], prices[n-2], 0.01) && prices[n-3] > prices[n-4]
+	// Troughs must be approximately equal, with a peak between
+	return isApproxEqual(prices[n-5], prices[n-3], 0.01) &&
+		prices[n-4] > prices[n-5] &&
+		prices[n-4] > prices[n-3]
 }
 
 // Rising Wedge (Bearish Reversal)

@@ -188,6 +188,18 @@ func identifyCandlestickPattern(candles []Candle) string {
 // detectChartPatterns analyzes the given price data to identify patterns
 func detectChartPatterns(prices, highs, lows []float64) string {
 
+	// Continuation Patterns
+	if isFlag(prices) {
+		return "Flag (Continuation)"
+	}
+	if isPennant(highs, lows) {
+		return "Pennant (Continuation)"
+	}
+	if isRectangle(prices) {
+		return "Rectangle (Continuation)"
+	}
+
+	// Reversal Patterns
 	if isHeadAndShoulders(prices) {
 		return "Head and Shoulders (Bearish Reversal)"
 	}
@@ -206,21 +218,16 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 	if isFallingWedge(highs, lows) {
 		return "Falling Wedge (Bullish Reversal)"
 	}
+
+	// V Patterns (Last Priority)
 	if isVPattern(prices) {
 		return "V Pattern (Bullish Reversal)"
 	}
 	if isInvertedVPattern(prices) {
-		return "V Pattern (Bearish Reversal)"
+		return "Inverted V Pattern (Bearish Reversal)"
 	}
-	if isFlag(prices) {
-		return "Flag (Continuation)"
-	}
-	if isPennant(highs, lows) {
-		return "Pennant (Continuation)"
-	}
-	if isRectangle(prices) {
-		return "Rectangle (Continuation)"
-	}
+
+	// Neutral Patterns
 	if isSymmetricalTriangle(highs, lows) {
 		return "Symmetrical Triangle (Neutral)"
 	}
