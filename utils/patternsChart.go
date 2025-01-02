@@ -20,10 +20,12 @@ func isApproxEqual(a, b, tolerance float64) bool {
 // 1. Reversal Patterns
 // V Pattern (Bullish Reversal)
 func isVPattern(prices []float64) bool {
-	n := len(prices)
-	if n < 5 {
+	n := 5
+	if len(prices) < n {
 		return false
 	}
+	prices = prices[len(prices)-n:]
+
 	// Check if prior trend is downward
 	prevTrend := prices[n-5] > prices[n-4] && prices[n-4] > prices[n-3]
 	return prevTrend && prices[n-3] > prices[n-2] && prices[n-2] < prices[n-1]
@@ -31,10 +33,12 @@ func isVPattern(prices []float64) bool {
 
 // Inverted V Pattern (Bearish Reversal)
 func isInvertedVPattern(prices []float64) bool {
-	n := len(prices)
-	if n < 5 {
+	n := 5
+	if len(prices) < n {
 		return false
 	}
+	prices = prices[len(prices)-n:]
+
 	// Check if prior trend is upward
 	prevTrend := prices[n-5] < prices[n-4] && prices[n-4] < prices[n-3]
 	return prevTrend && prices[n-3] < prices[n-2] && prices[n-2] > prices[n-1]
@@ -42,28 +46,64 @@ func isInvertedVPattern(prices []float64) bool {
 
 // Head and Shoulders (Bearish Reversal)
 func isHeadAndShoulders(prices []float64) bool {
-	n := len(prices)
-	if n < 5 {
+	n := 7
+	if len(prices) < n {
 		return false
 	}
-	return prices[n-5] < prices[n-4] && prices[n-3] > prices[n-4] && prices[n-1] < prices[n-3]
+	prices = prices[len(prices)-n:]
+
+	// Identify key points
+	point1 := prices[n-7]
+	point2 := prices[n-6]
+	point3 := prices[n-5]
+	point4 := prices[n-4]
+	point5 := prices[n-3]
+	point6 := prices[n-2]
+	point7 := prices[n-1]
+
+	// Check for head and shoulders pattern
+	leftShoulder := point1 < point2
+	head := point3 < point2 && point3 < point4 && point4 > point2
+	rightShoulder := point5 < point4 && point5 > point3 && point6 < point4 && point6 > point2
+	breakdown := point7 < point5
+
+	return leftShoulder && head && rightShoulder && breakdown
 }
 
 // Inverse Head and Shoulders (Bullish Reversal)
 func isInverseHeadAndShoulders(prices []float64) bool {
-	n := len(prices)
-	if n < 5 {
+	n := 7
+	if len(prices) < n {
 		return false
 	}
-	return prices[n-5] > prices[n-4] && prices[n-3] < prices[n-4] && prices[n-1] > prices[n-3]
+	prices = prices[len(prices)-n:]
+
+	// Identify key points
+	point1 := prices[n-7]
+	point2 := prices[n-6]
+	point3 := prices[n-5]
+	point4 := prices[n-4]
+	point5 := prices[n-3]
+	point6 := prices[n-2]
+	point7 := prices[n-1]
+
+	// Check for inverse head and shoulders pattern
+	leftShoulder := point1 > point2
+	head := point3 > point2 && point3 > point4 && point4 < point2
+	rightShoulder := point5 > point4 && point5 < point3 && point6 > point4 && point6 < point2
+	breakout := point7 > point5
+
+	return leftShoulder && head && rightShoulder && breakout
 }
 
 // Double Top (Bearish Reversal)
 func isDoubleTop(prices []float64) bool {
-	n := len(prices)
-	if n < 5 {
+	n := 5
+	if len(prices) < n {
 		return false
 	}
+	prices = prices[len(prices)-n:]
+
 	// Peaks must be approximately equal, with a dip between
 	return isApproxEqual(prices[n-5], prices[n-3], 0.01) &&
 		prices[n-4] < prices[n-5] &&
@@ -72,10 +112,12 @@ func isDoubleTop(prices []float64) bool {
 
 // Double Bottom (Bullish Reversal)
 func isDoubleBottom(prices []float64) bool {
-	n := len(prices)
-	if n < 5 {
+	n := 5
+	if len(prices) < n {
 		return false
 	}
+	prices = prices[len(prices)-n:]
+
 	// Troughs must be approximately equal, with a peak between
 	return isApproxEqual(prices[n-5], prices[n-3], 0.01) &&
 		prices[n-4] > prices[n-5] &&
@@ -84,18 +126,28 @@ func isDoubleBottom(prices []float64) bool {
 
 // Rising Wedge (Bearish Reversal)
 func isRisingWedge(highs, lows []float64) bool {
-	if len(highs) < 3 || len(lows) < 3 {
+	n := 7
+	if len(highs) < n || len(lows) < n {
 		return false
 	}
-	return slope(0, lows[0], 2, lows[2]) > slope(0, highs[0], 2, highs[2])
+	lows = lows[len(lows)-n:]
+	highs = highs[len(highs)-n:]
+
+	lenght := len(highs) - 1
+	return slope(0, lows[0], float64(lenght), lows[lenght]) > slope(0, highs[0], float64(lenght), highs[lenght])
 }
 
 // Falling Wedge (Bullish Reversal)
 func isFallingWedge(highs, lows []float64) bool {
-	if len(highs) < 3 || len(lows) < 3 {
+	n := 7
+	if len(highs) < n || len(lows) < n {
 		return false
 	}
-	return slope(0, highs[0], 2, highs[2]) > slope(0, lows[0], 2, lows[2])
+	lows = lows[len(lows)-n:]
+	highs = highs[len(highs)-n:]
+
+	lenght := len(highs) - 1
+	return slope(0, highs[0], float64(lenght), highs[lenght]) > slope(0, lows[0], float64(lenght), lows[lenght])
 }
 
 // 2. Continuation Patterns
