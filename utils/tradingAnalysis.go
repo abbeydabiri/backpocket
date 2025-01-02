@@ -353,7 +353,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		last10Low := data.Low[len(data.Low)-10:]
 
 		//pick last 3 exclude the latest candle
-		for i := len(last10Close) - 4; i < (len(last10Close) - 1); i++ {
+		for i := 0; i < len(last10Close); i++ {
 			candleArray = append(candleArray, Candle{
 				Close: last10Close[i],
 				Open:  last10Open[i],
@@ -362,7 +362,13 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 			})
 		}
 		chartPattern = detectChartPatterns(last10Close, last10High, last10Low)
-		candlePattern = identifyCandlestickPattern(candleArray)
+		candlePattern = identifyCandlestickPattern(candleArray[:len(candleArray)-1])
+		candlePattern2 := identifyCandlestickPattern(candleArray)
+		if candlePattern != "" && candlePattern2 != "" {
+			candlePattern = fmt.Sprintf("%s + %s", candlePattern, candlePattern2)
+		} else {
+			candlePattern = candlePattern2
+		}
 	}
 
 	var currentCandle Candle
