@@ -91,7 +91,7 @@ func wsHandlerAnalysisBroadcast() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Second * 4)
+		ticker := time.NewTicker(time.Second * 3)
 		defer ticker.Stop()
 		for ; true; <-ticker.C {
 			analysisListMutex.RLock()
@@ -150,7 +150,7 @@ func GoFetchEnabledMarketsAnalysis() {
 
 	var analysisMarkets []models.Market
 
-	ticker := time.NewTicker(time.Second * 20)
+	ticker := time.NewTicker(time.Second * 15)
 	defer ticker.Stop()
 	for ; true; <-ticker.C {
 
