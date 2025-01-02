@@ -102,7 +102,7 @@ func apiStrategyStopLossTakeProfit() {
 
 			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
 			analysis := getAnalysis(oldOrder.Pair, oldOrder.Exchange)
-			analysisTimeframe := "3m"
+			analysisTimeframe := "1m"
 			analysisInterval := utils.Summary{}
 			if analysis.Intervals[analysisTimeframe].Timeframe == analysisTimeframe {
 				analysisInterval = analysis.Intervals[analysisTimeframe]
@@ -144,7 +144,7 @@ func apiStrategyStopLossTakeProfit() {
 				if overallTrend == "Bullish" && checkReversalPatterns(overallTrend, chartPattern) &&
 					isMarketResistance && market.Close < analysisInterval.Candle.Open &&
 					market.Price < market.LastPrice && market.Close < midRetracement &&
-					sellPercentDifference > float64(5) && marketRSI > float64(70) {
+					sellPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
@@ -170,7 +170,7 @@ func apiStrategyStopLossTakeProfit() {
 				if overallTrend == "Bearish" && checkReversalPatterns(overallTrend, chartPattern) &&
 					isMarketSupport && market.Close > analysisInterval.Candle.Open &&
 					market.Price > market.LastPrice && market.Close > midRetracement &&
-					buyPercentDifference > float64(5) && marketRSI < float64(35) {
+					buyPercentDifference > float64(5) {
 
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
