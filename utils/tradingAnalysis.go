@@ -360,11 +360,15 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 			})
 		}
 		chartPattern = detectChartPatterns(last10Close, last10High, last10Low)
-		candlePattern = identifyCandlestickPattern(candleArray[:len(candleArray)-1])
+		candlePattern1 := identifyCandlestickPattern(candleArray[:len(candleArray)-1])
 		candlePattern2 := identifyCandlestickPattern(candleArray)
-		if candlePattern != "" && candlePattern2 != "" {
-			candlePattern = fmt.Sprintf("%s + %s", candlePattern, candlePattern2)
-		} else {
+
+		switch {
+		case candlePattern1 != "" && candlePattern2 != "":
+			candlePattern = fmt.Sprintf("%s + %s", candlePattern1, candlePattern2)
+		case candlePattern1 != "":
+			candlePattern = candlePattern1
+		case candlePattern2 != "":
 			candlePattern = candlePattern2
 		}
 	}
