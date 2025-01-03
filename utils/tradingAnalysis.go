@@ -201,19 +201,17 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 	if isDoubleBottom(prices) {
 		return "Double Bottom (Bullish Reversal)"
 	}
+	if isVPattern(prices) {
+		return "V Pattern (Bullish Reversal)"
+	}
+	if isInvertedVPattern(prices) {
+		return "V Pattern (Bearish Reversal)"
+	}
 	if isRisingWedge(highs, lows) {
 		return "Rising Wedge (Bearish Reversal)"
 	}
 	if isFallingWedge(highs, lows) {
 		return "Falling Wedge (Bullish Reversal)"
-	}
-
-	// V Patterns (Last Priority)
-	if isVPattern(prices) {
-		return "V Pattern (Bullish Reversal)"
-	}
-	if isInvertedVPattern(prices) {
-		return "Inverted V Pattern (Bearish Reversal)"
 	}
 
 	// Continuation Patterns
