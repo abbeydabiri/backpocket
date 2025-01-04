@@ -212,7 +212,7 @@ func restHandlerAnalysis(httpRes http.ResponseWriter, httpReq *http.Request) {
 
 func retrieveMarketPairAnalysis(pair, exchange, limit, endTime, startTime, intervals string) (analysis analysisType, err error) {
 	if intervals == "" {
-		intervals = "1m,5m,15m,1h,4h,12h,1d,3d,1w,1M"
+		intervals = "1m,5m,15m,30m,1h,4h,6h,12h,1d,3d"
 	}
 
 	analysis.Pair = pair
