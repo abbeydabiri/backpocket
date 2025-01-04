@@ -152,7 +152,7 @@ func GoFetchEnabledMarketsAnalysis() {
 
 	ticker := time.NewTicker(time.Second * 15)
 	defer ticker.Stop()
-	for ; true; <-ticker.C {
+	for {
 
 		marketListMutex.RLock()
 		analysisMarkets = []models.Market{}
@@ -171,6 +171,7 @@ func GoFetchEnabledMarketsAnalysis() {
 			}
 			updateAnalysis(analysis)
 		}
+		<-ticker.C
 	}
 
 }

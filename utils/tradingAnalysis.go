@@ -282,7 +282,7 @@ func identifyCandlestickPattern(candles []Candle) string {
 		return "Bearish: Shooting Star"
 	}
 
-	return "Neutral Pattern"
+	return "Neutral: Pattern"
 }
 
 // detectChartPatterns analyzes the given price data to identify patterns
@@ -341,14 +341,6 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 
 func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
 
-	if trend10 >= trend20 && trend20 >= trend50 && curPrice >= trend10 {
-		return Bullish
-	}
-
-	if trend10 <= trend20 && trend20 <= trend50 && curPrice <= trend10 {
-		return Bearish
-	}
-
 	if trend50 == 0 {
 		if trend10 >= trend20 && curPrice >= trend10 {
 			return Bullish
@@ -357,6 +349,24 @@ func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
 		if trend10 <= trend20 && curPrice <= trend10 {
 			return Bearish
 		}
+	}
+
+	if trend20 == 0 {
+		if curPrice >= trend10 {
+			return Bullish
+		}
+
+		if curPrice <= trend10 {
+			return Bearish
+		}
+	}
+
+	if trend10 >= trend20 && trend20 >= trend50 && curPrice >= trend10 {
+		return Bullish
+	}
+
+	if trend10 <= trend20 && trend20 <= trend50 && curPrice <= trend10 {
+		return Bearish
 	}
 
 	return Neutral
@@ -430,22 +440,18 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	period20 := 20
 	period50 := 50
 
-	if len(data.Close) > 5 && len(data.Close) <= 10 {
-		period10 = len(data.Close) - 1
+	if len(data.Close) == 0 {
+		return Summary{}, fmt.Errorf("Not market data provided for %s %s", pair, timeframe)
 	}
-	if len(data.Close) > 10 && len(data.Close) <= 20 {
-		period20 = len(data.Close) - 1
-	}
-	if len(data.Close) > 20 && len(data.Close) <= 50 {
+
+	if len(data.Close) <= period50 {
 		period50 = len(data.Close) - 1
 	}
-
-	if len(data.Close) < period10 {
-		return Summary{}, fmt.Errorf("Not enough data for analysis of period 10")
+	if len(data.Close) <= period20 {
+		period20 = len(data.Close) - 1
 	}
-
-	if len(data.Close) < period20 {
-		return Summary{}, fmt.Errorf("Not enough data for analysis of period 20")
+	if len(data.Close) <= period10 {
+		period10 = len(data.Close) - 1
 	}
 
 	var analysis10, analysis20, analysis50 trendAnalysis
@@ -457,39 +463,43 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	}
 
 	rsiLength := 14
+	if period20 < rsiLength {
+		rsiLength = period20
+	}
 	smoothedRSI := CalculateSmoothedRSI(data.Close, rsiLength, 5)
 	bollingerbands := calculateBollingerBands(data.Close, period20, 2)
 
 	chartPattern := ""
 	candlePattern := ""
 
-	if len(data.Close) >= 10 {
+	if len(data.Close) >= period10 {
 		candleArray := []Candle{}
-		last10Close := data.Close[len(data.Close)-10:]
-		last10Open := data.Open[len(data.Open)-10:]
-		last10High := data.High[len(data.High)-10:]
-		last10Low := data.Low[len(data.Low)-10:]
+		lastClose := data.Close[len(data.Close)-period10:]
+		lastOpen := data.Open[len(data.Open)-period10:]
+		lastHigh := data.High[len(data.High)-period10:]
+		lastLow := data.Low[len(data.Low)-period10:]
 
-		//pick last 3 exclude the latest candle
-		for i := 0; i < len(last10Close); i++ {
+		for i := 0; i < len(lastClose); i++ {
 			candleArray = append(candleArray, Candle{
-				Close: last10Close[i],
-				Open:  last10Open[i],
-				High:  last10High[i],
-				Low:   last10Low[i],
+				Close: lastClose[i],
+				Open:  lastOpen[i],
+				High:  lastHigh[i],
+				Low:   lastLow[i],
 			})
 		}
-		chartPattern = detectChartPatterns(last10Close, last10High, last10Low)
+		chartPattern = detectChartPatterns(lastClose, lastHigh, lastLow)
 		candlePattern = fmt.Sprintf("%s + %s",
 			identifyCandlestickPattern(candleArray[:len(candleArray)-1]),
 			identifyCandlestickPattern(candleArray))
 	}
 
 	var currentCandle Candle
-	currentCandle.Close = data.Close[len(data.Close)-1]
-	currentCandle.High = data.High[len(data.High)-1]
-	currentCandle.Low = data.Low[len(data.Low)-1]
-	currentCandle.Open = data.Open[len(data.Open)-1]
+	if len(data.Close) > 1 {
+		currentCandle.Close = data.Close[len(data.Close)-1]
+		currentCandle.High = data.High[len(data.High)-1]
+		currentCandle.Low = data.Low[len(data.Low)-1]
+		currentCandle.Open = data.Open[len(data.Open)-1]
+	}
 
 	trendName := OverallTrend(analysis10.Entry, analysis20.Entry, analysis50.Entry, currentCandle.Close)
 	return Summary{
@@ -506,7 +516,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		RSI:            smoothedRSI,
 		BollingerBands: bollingerbands,
 		RetracementLevels: calculateFibonacciRetracement(
-			data.High[len(data.High)-1],
-			data.Low[len(data.Low)-1]),
+			currentCandle.High,
+			currentCandle.Low),
 	}, nil
 }

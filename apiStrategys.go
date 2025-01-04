@@ -28,13 +28,18 @@ func showsReversalPatterns(trend string, pattern utils.SummaryPattern) (match bo
 	isChartPattern := false
 	isCandlePattern := false
 
+	candle := pattern.Candle
 	candleSticks := strings.Split(pattern.Candle, "+")
 
 	if strings.Contains(pattern.Chart, trend+":") {
 		isCandlePattern = true
 	}
 
-	if strings.Contains(candleSticks[1], trend+":") {
+	if len(candleSticks) > 1 {
+		candle = candleSticks[1]
+	}
+
+	if strings.Contains(candle, trend+":") {
 		isCandlePattern = true
 	}
 
@@ -165,9 +170,12 @@ func apiStrategyStopLossTakeProfit() {
 				price = orderbookBidPrice
 			}
 
+			title := fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange))
+			message = fmt.Sprintf("%s '%s' @ %v", message, orderbookPair, price)
+			log.Printf("Opportunity: %s | %s \n", title, message)
+
 			wsBroadcastNotification <- notifications{
-				Title:   fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange)),
-				Message: fmt.Sprintf("%s '%s' @ %v", message, orderbookPair, price),
+				Title: title, Message: message,
 			}
 		}
 

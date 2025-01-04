@@ -91,7 +91,7 @@ func main() {
 	go binanceAssetStream()
 	go GoFetchEnabledMarketsAnalysis()
 
-	// go binanceTradeStream() //disabled due to not being needed and data overflooding and high cpu usage
+	// // go binanceTradeStream() //disabled due to not being needed and data overflooding and high cpu usage
 	go binanceOrderBookStream()
 	go binanceMarket24hrTicker()
 	go binanceMarketOHLCVStream()
