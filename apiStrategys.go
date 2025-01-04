@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -23,21 +24,101 @@ var (
 	chanStoplossTakeProfit = make(chan orderbooks, 10240)
 )
 
-func checkReversalPatterns(overallTrend, pattern string) (match bool) {
-	switch overallTrend {
-	case "Bearish": //check for bullish reversal patterns
-		if pattern == "Falling Wedge (Bullish Reversal)" ||
-			pattern == "Head and Shoulders (Bullish Reversal)" ||
-			pattern == "Double Bottom (Bullish Reversal)" {
-			match = true
-		}
-	case "Bullish": //check for bearish reversal patterns
-		if pattern == "Rising Wedge (Bearish Reversal)" ||
-			pattern == "Head and Shoulders (Bearish Reversal)" ||
-			pattern == "Double Top (Bearish Reversal)" {
-			match = true
-		}
+func showsReversalPatterns(trend string, pattern utils.SummaryPattern) (match bool) {
+	isChartPattern := false
+	isCandlePattern := false
+
+	candleSticks := strings.Split(pattern.Candle, "+")
+
+	if strings.Contains(pattern.Chart, trend+":") {
+		isCandlePattern = true
 	}
+
+	if strings.Contains(candleSticks[1], trend+":") {
+		isCandlePattern = true
+	}
+
+	return isChartPattern && isCandlePattern
+}
+
+func findOpportunity(pair, exchange string,
+	buyPercentDiff, sellPercentDiff float64) (opportunity string) {
+	// Optimal Entry and Exit Points
+	// 	1. For Longs:
+	// 		Entry: Look for bullish patterns in short-term timeframes (Minutes and Hours) within a neutral-to-bullish overall trend.
+	//		(e.g 1m or 5m is neutral or bearish and patterns are bullish)
+	//
+	// 		Exit: Monitor bearish patterns in higher timeframes (Days and Weeks) within a neutral-to-bullish overall trend.
+	//		(e.g 5m or 15m is neutral or bullish and patterns are bearish)
+	//
+	// 	2. For Shorts:
+	// 		Entry: Look for bearish patterns in short-term timeframes within a neutral-to-bearish overall trend.
+	//		(e.g 1m or 5m is neutral or bullish and patterns are bearish)
+	//
+	// 		Exit: Monitor neutral or bullish patterns in higher timeframes.
+	//		(e.g 5m or 15m is neutral or bearish and patterns are bullish)
+
+	if pair == "" || exchange == "" {
+		return
+	}
+
+	market := getMarket(pair, exchange)
+	analysis := getAnalysis(pair, exchange)
+
+	if market.Pair != pair || market.Exchange != exchange {
+		return
+	}
+
+	if analysis.Pair != pair || analysis.Exchange != exchange {
+		return
+	}
+
+	lowerInterval := analysis.Intervals["1m"]
+	higherInterval := analysis.Intervals["5m"]
+
+	lowerRetracement := lowerInterval.RetracementLevels["0.786"]
+	higherRetracement := higherInterval.RetracementLevels["0.236"]
+
+	isMarketSupport := false
+	if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
+		lowerInterval.SMA10.Support == lowerInterval.SMA50.Support {
+		isMarketSupport = true
+	}
+
+	isMarketResistance := false
+	if higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance &&
+		higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance {
+		isMarketResistance = true
+	}
+
+	//Check for Long // Buy Opportunity
+	// 		Entry: Look for bullish patterns in short-term timeframes (Minutes and Hours) within a neutral-to-bullish overall trend.
+	//		(e.g 1m or 5m is neutral or bearish and patterns are bullish)
+	//		Monitor neutral or bullish patterns in higher timeframes.
+	//		(e.g 5m or 15m is neutral or bearish and patterns are bullish)
+	if lowerInterval.Trend != "Bullish" && isMarketSupport &&
+		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
+		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
+		market.Close > lowerInterval.Candle.Open && market.Price > market.LastPrice &&
+		market.Close > lowerRetracement && buyPercentDiff > float64(5) {
+		opportunity = "BUY"
+	}
+
+	// -- -- --
+
+	//Check for Short // Sell Opportunity
+	// 		Exit: Monitor bearish patterns in higher timeframes (Days and Weeks) within a neutral-to-bullish overall trend.
+	//		(e.g 5m or 15m is neutral or bullish and patterns are bearish)
+	//  	Look for bearish patterns in short-term timeframes within a neutral-to-bearish overall trend.
+	//		(e.g 1m or 5m is neutral or bullish and patterns are bearish)
+	if higherInterval.Trend != "Bearish" && isMarketResistance &&
+		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
+		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
+		market.Close < lowerInterval.Candle.Open && market.Price < market.LastPrice &&
+		market.Close < higherRetracement && sellPercentDiff > float64(5) {
+		opportunity = "SELL"
+	}
+
 	return
 }
 
@@ -50,6 +131,7 @@ func apiStrategyStopLossTakeProfit() {
 
 		orderbookMutex.RLock()
 		orderbookPair := orderbook.Pair
+		orderbookExchange := orderbook.Exchange
 		if len(orderbook.Bids) > 0 {
 			orderbookBidPrice = orderbook.Bids[0].Price
 		}
@@ -70,6 +152,24 @@ func apiStrategyStopLossTakeProfit() {
 
 		var oldOrderList []models.Order
 		var oldPriceList []float64
+
+		sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
+		buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
+		opportunityFound := findOpportunity(orderbookPair, orderbookExchange, buyPercentDifference, sellPercentDifference)
+
+		if opportunityFound != "" {
+			price := orderbookAskPrice
+			message := "BUY or LONG"
+			if opportunityFound == "SELL" {
+				message = "SELL or SHORT"
+				price = orderbookBidPrice
+			}
+
+			wsBroadcastNotification <- notifications{
+				Title:   fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange)),
+				Message: fmt.Sprintf("%s '%s' @ %v", message, orderbookPair, price),
+			}
+		}
 
 		//do a mutex RLock loop through orders
 		orderListMutex.RLock()
@@ -100,55 +200,14 @@ func apiStrategyStopLossTakeProfit() {
 				continue
 			}
 
-			market := getMarket(oldOrder.Pair, oldOrder.Exchange)
-			analysis := getAnalysis(oldOrder.Pair, oldOrder.Exchange)
-			analysisTimeframe := "3m"
-			analysisInterval := utils.Summary{}
-			if analysis.Intervals[analysisTimeframe].Timeframe == analysisTimeframe {
-				analysisInterval = analysis.Intervals[analysisTimeframe]
-			}
-			if analysisInterval.Timeframe == "" {
-				for _, interval := range analysis.Intervals {
-					if interval.Timeframe == "" {
-						analysisInterval = interval
-						break
-					}
-				}
-			}
-
-			marketRSI := analysisInterval.RSI
-			overallTrend := analysisInterval.Trend
-			chartPattern := analysisInterval.Pattern.Chart
-
-			midRetracement := analysisInterval.RetracementLevels["0.500"]
-
-			isMarketSupport := false
-			if analysisInterval.SMA10.Support == analysisInterval.SMA20.Support &&
-				analysisInterval.SMA10.Support == analysisInterval.SMA50.Support {
-				isMarketSupport = true
-			}
-
-			isMarketResistance := false
-			if analysisInterval.SMA10.Resistance == analysisInterval.SMA20.Resistance &&
-				analysisInterval.SMA10.Resistance == analysisInterval.SMA50.Resistance {
-				isMarketResistance = true
-			}
-
 			switch oldOrder.Side {
 			case "BUY": //CHECK TO SELL BACK
 				oldOrder.RefSide = "SELL"
 
-				//calculate percentage difference between orderBookAsksBaseTotal and orderBookBidsBaseTotal
-				sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
-
-				if overallTrend == "Bullish" && checkReversalPatterns(overallTrend, chartPattern) &&
-					isMarketResistance && market.Close < analysisInterval.Candle.Open &&
-					market.Price < market.LastPrice && market.Close < midRetracement &&
-					sellPercentDifference > float64(5) {
-
+				if opportunityFound == "SELL" {
 					newTakeprofit := utils.TruncateFloat(((orderbookBidPrice-oldOrder.Price)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
-						oldOrder.RefTripped = fmt.Sprintf("> %.3f%% TP: %.8f @ RSI %.2f", newTakeprofit, orderbookBidPrice, marketRSI)
+						oldOrder.RefTripped = fmt.Sprintf("> %.3f%% TP: %.8f", newTakeprofit, orderbookBidPrice)
 						oldPriceList = append(oldPriceList, orderbookBidPrice)
 						oldOrderList = append(oldOrderList, oldOrder)
 					}
@@ -164,17 +223,10 @@ func apiStrategyStopLossTakeProfit() {
 			case "SELL": //CHECK TO BUY BACK
 				oldOrder.RefSide = "BUY"
 
-				//calculate percentage difference between orderBookBidsBaseTotal and orderBookAsksBaseTotal
-				buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
-
-				if overallTrend == "Bearish" && checkReversalPatterns(overallTrend, chartPattern) &&
-					isMarketSupport && market.Close > analysisInterval.Candle.Open &&
-					market.Price > market.LastPrice && market.Close > midRetracement &&
-					buyPercentDifference > float64(5) {
-
+				if opportunityFound == "BUY" {
 					newTakeprofit := utils.TruncateFloat(((oldOrder.Price-orderbookAskPrice)/oldOrder.Price)*100, 3)
 					if newTakeprofit >= oldOrder.Takeprofit && oldOrder.Takeprofit > 0 {
-						oldOrder.RefTripped = fmt.Sprintf("< %.3f%% TP: %.8f @ RSI %.2f", newTakeprofit, orderbookAskPrice, marketRSI)
+						oldOrder.RefTripped = fmt.Sprintf("< %.3f%% TP: %.8ff", newTakeprofit, orderbookAskPrice)
 						oldPriceList = append(oldPriceList, orderbookAskPrice)
 						oldOrderList = append(oldOrderList, oldOrder)
 					}

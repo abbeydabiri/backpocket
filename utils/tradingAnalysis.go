@@ -40,7 +40,7 @@ type trendAnalysis struct {
 }
 
 // Summary contains the final analysis report.
-type summaryPattern struct {
+type SummaryPattern struct {
 	Chart  string
 	Candle string
 }
@@ -48,7 +48,7 @@ type Summary struct {
 	Timeframe         string
 	Trend             string
 	RSI               float64
-	Pattern           summaryPattern
+	Pattern           SummaryPattern
 	BollingerBands    map[string]float64
 	SMA10             trendAnalysis
 	SMA20             trendAnalysis
@@ -145,44 +145,144 @@ func calculateBollingerBands(closePrices []float64, period int, stdDev float64) 
 
 // identifyCandlestickPattern detects candlestick patterns
 func identifyCandlestickPattern(candles []Candle) string {
-	if len(candles) < 3 {
-		return "Candles less than 3"
+	if len(candles) < 4 {
+		return "Candles less than 4"
 	}
 
 	latest := candles[len(candles)-1]
 	penultimate := candles[len(candles)-2]
 
-	// Bullish Hammer
-	if isHammer(latest) {
-		return "Hammer (Bullish)"
+	// - four candle stick patterns - //
+	// Bearish Concealing Baby Swallow
+	if isBearishConcealingBabySwallow(candles[len(candles)-4:]) {
+		return "Bearish: Concealing Baby"
 	}
 
-	// Shooting Star
-	if isShootingStar(latest) {
-		return "Shooting Star (Bearish)"
+	//Bearish Three Line Strike
+	if isBearishThreeLineStrike(candles[len(candles)-4:]) {
+		return "Bearish: Three Line Strike"
 	}
+
+	// - three candle stick patterns - //
+	// Bullish Deliberation (Variation of Three White Soldiers)
+	if isBullishDeliberation(candles[len(candles)-3:]) {
+		return "Bullish: Deliberation"
+	}
+
+	// Bullish Three White Soldiers
+	if isBullishThreeWhiteSoldiers(candles[len(candles)-3:]) {
+		return "Bullish: Three White Soldiers"
+	}
+
+	// Bearish Identical Three Crows
+	if isBearishIdenticalThreeCrows(candles[len(candles)-3:]) {
+		return "Bearish: Identical Three Crows"
+	}
+
+	// Bearish Three Black Crows
+	if isBearishThreeBlackCrows(candles[len(candles)-3:]) {
+		return "Bearish: Three Black Crows"
+	}
+
+	// Bullish Morning Star
+	if isBullishMorningStar(candles[len(candles)-3:]) {
+		return "Bullish: Morning Star"
+	}
+
+	// Bearish Evening Star
+	if isBearishEveningStar(candles[len(candles)-3:]) {
+		return "Bearish: Evening Star"
+	}
+
+	// - two candle stick patterns - //
 
 	// Bullish Engulfing
-	if isEngulfingBullish(penultimate, latest) {
-		return "Engulfing Bullish"
+	if isBullishEngulfing(penultimate, latest) {
+		return "Bullish: Engulfing"
 	}
 
 	// Bearish Engulfing
-	if isEngulfingBearish(penultimate, latest) {
-		return "Engulfing Bearish"
+	if isBearishEngulfing(penultimate, latest) {
+		return "Bearish: Engulfing"
 	}
 
-	// Morning Star
-	if len(candles) >= 3 && isMorningStar(candles[len(candles)-3:]) {
-		return "Morning Star (Bullish)"
+	//Bullish Tweezer Bottoms
+	if isBullishTweezerBottoms(penultimate, latest) {
+		return "Bullish: Tweezer Bottoms"
 	}
 
-	// Evening Star
-	if len(candles) >= 3 && isEveningStar(candles[len(candles)-3:]) {
-		return "Evening Star (Bearish)"
+	//Bearish Tweezer Tops
+	if isBearishTweezerTops(penultimate, latest) {
+		return "Bearish: Tweezer Tops"
 	}
 
-	return ""
+	// - one candle stick patterns - //
+	// Bullish Marubozu
+	if isBullishMarubozu(latest) {
+		return "Bullish: Marubozu"
+	}
+
+	// Bearish Marubozu
+	if isBearishMarubozu(latest) {
+		return "Bearish: Marubozu"
+	}
+
+	// Bullish Spinning Top
+	if isBullishSpinningTop(latest) {
+		return "Bullish: Spinning Top"
+	}
+
+	// Bearish Spinning Top
+	if isBearishSpinningTop(latest) {
+		return "Bearish: Spinning Top"
+	}
+
+	// Normal Doji
+	if isNormalDoji(latest) {
+		return "Normal Doji"
+	}
+
+	// Dragonfly Doji
+	if isDragonflyDoji(latest) {
+		return "Dragonfly Doji"
+	}
+
+	// Four Price Doji
+	if isFourPriceDoji(latest) {
+		return "Four Price Doji"
+	}
+
+	// Gravestone Doji
+	if isGravestoneDoji(latest) {
+		return "Gravestone Doji"
+	}
+
+	//Long Legged Doji
+	if isLongLeggedDoji(latest) {
+		return "Long Legged Doji"
+	}
+
+	// Bullish Hammer
+	if isBullishHammer(latest) {
+		return "Bullish: Hammer"
+	}
+
+	// Bullish Inverted Hammer
+	if isBullishInvertedHammer(latest) {
+		return "Bullish: Inverted Hammer"
+	}
+
+	// Bearish: Hanging Man
+	if isBearishHangingMan(latest) {
+		return "Bearish: Hanging Man"
+	}
+
+	// Bearish: Shooting Star
+	if isBearishShootingStar(latest) {
+		return "Bearish: Shooting Star"
+	}
+
+	return "Neutral Pattern"
 }
 
 // detectChartPatterns analyzes the given price data to identify patterns
@@ -190,53 +290,53 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 
 	// Reversal Patterns
 	if isHeadAndShoulders(prices) {
-		return "Head and Shoulders (Bearish Reversal)"
+		return "Bearish: Head and Shoulders"
 	}
 	if isInverseHeadAndShoulders(prices) {
-		return "Head and Shoulders (Bullish Reversal)"
+		return "Bullish: Head and Shoulders"
 	}
 	if isDoubleTop(prices) {
-		return "Double Top (Bearish Reversal)"
+		return "Bearish: Double Top"
 	}
 	if isDoubleBottom(prices) {
-		return "Double Bottom (Bullish Reversal)"
+		return "Bullish: Double Bottom"
 	}
 	if isVPattern(prices) {
-		return "V Pattern (Bullish Reversal)"
+		return "Bullish: V Pattern"
 	}
 	if isInvertedVPattern(prices) {
-		return "V Pattern (Bearish Reversal)"
+		return "Bearish: V Pattern"
 	}
 	if isRisingWedge(highs, lows) {
-		return "Rising Wedge (Bearish Reversal)"
+		return "Bearish: Rising Wedge"
 	}
 	if isFallingWedge(highs, lows) {
-		return "Falling Wedge (Bullish Reversal)"
+		return "Bullish: Falling Wedge"
 	}
 
 	// Continuation Patterns
 	if isFlag(prices) {
-		return "Flag (Continuation)"
+		return "Continuation: Flag"
 	}
 	if isPennant(prices) {
-		return "Pennant (Continuation)"
+		return "Continuation: Pennant"
 	}
 	if isRectangle(prices) {
-		return "Rectangle (Continuation)"
+		return "Continuation: Rectangle"
 	}
 
 	// Neutral Patterns
 	if isSymmetricalTriangle(highs, lows) {
-		return "Symmetrical Triangle (Neutral)"
+		return "Neutral: Symmetrical Triangle"
 	}
 	if isAscendingTriangle(highs, lows) {
-		return "Ascending Triangle (Neutral)"
+		return "Neutral: Ascending Triangle"
 	}
 	if isDescendingTriangle(highs, lows) {
-		return "Descending Triangle (Neutral)"
+		return "Neutral: Descending Triangle"
 	}
 
-	return ""
+	return "Neutral"
 }
 
 func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
@@ -277,10 +377,10 @@ Time Weight	Reason
 // TimeframetTrends
 func TimeframeTrends(intervals map[string]Summary) string {
 	trendName := ""
+	maxScore := 0
 	totalScore := 0
-	threshHold := 10
 	timeWeights := map[string]int{
-		"1m": 1, "3m": 2, "5m": 4, "15m": 5, "30m": 4, "4h": 3, "1d": 2,
+		"1m": 5, "5m": 10, "15m": 15, "1h": 20, "4h": 25, "12h": 30, "1d": 35, "3d": 40, "1w": 45, "1M": 50,
 	}
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]
@@ -292,14 +392,34 @@ func TimeframeTrends(intervals map[string]Summary) string {
 			trendScore = -1 * multiplier
 		}
 		totalScore += trendScore
+		if interval.SMA10.Entry != 0 && interval.SMA20.Entry != 0 {
+			maxScore += multiplier
+		}
+	}
+	//Strong Bullish:
+	minScoreStrongBullish := 0.7 * float64(maxScore)
+	if float64(totalScore) >= minScoreStrongBullish {
+		return "Strong Bullish"
 	}
 
-	if totalScore >= threshHold {
-		return Bullish
+	//Bullish:
+	minScoreBullish := 0.3 * float64(maxScore)
+	if float64(totalScore) >= minScoreBullish {
+		return "Bullish"
 	}
-	if totalScore <= -threshHold {
-		return Bearish
+
+	//Strong Bearish:
+	minScoreStrongBearish := -0.7 * float64(maxScore)
+	if float64(totalScore) <= minScoreStrongBearish {
+		return "Strong Bearish"
 	}
+
+	//Bearish:
+	minScoreBearish := -0.3 * float64(maxScore)
+	if float64(totalScore) <= minScoreBearish {
+		return "Bearish"
+	}
+
 	return Neutral
 }
 
@@ -360,17 +480,9 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 			})
 		}
 		chartPattern = detectChartPatterns(last10Close, last10High, last10Low)
-		candlePattern1 := identifyCandlestickPattern(candleArray[:len(candleArray)-1])
-		candlePattern2 := identifyCandlestickPattern(candleArray)
-
-		switch {
-		case candlePattern1 != "" && candlePattern2 != "":
-			candlePattern = fmt.Sprintf("%s + %s", candlePattern1, candlePattern2)
-		case candlePattern1 != "":
-			candlePattern = candlePattern1
-		case candlePattern2 != "":
-			candlePattern = candlePattern2
-		}
+		candlePattern = fmt.Sprintf("%s + %s",
+			identifyCandlestickPattern(candleArray[:len(candleArray)-1]),
+			identifyCandlestickPattern(candleArray))
 	}
 
 	var currentCandle Candle
@@ -383,7 +495,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	return Summary{
 		Timeframe: timeframe,
 		Trend:     trendName,
-		Pattern: summaryPattern{
+		Pattern: SummaryPattern{
 			Chart:  chartPattern,
 			Candle: candlePattern,
 		},
