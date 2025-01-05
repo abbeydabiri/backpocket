@@ -98,9 +98,9 @@ func findOpportunity(pair, exchange string,
 		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
 		market.LastPrice > lowerInterval.Candle.Open &&
 		market.Price > market.LastPrice &&
-		market.LastPrice > higherRetracement &&
+		lowerInterval.Candle.Open <= lowerRetracement &&
 		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] &&
-		buyPercentDiff > float64(3) && lowerInterval.RSI < 30 {
+		buyPercentDiff > float64(3) && lowerInterval.RSI < 40 {
 		opportunity = "BUY"
 	}
 
@@ -112,9 +112,9 @@ func findOpportunity(pair, exchange string,
 		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
 		market.LastPrice < lowerInterval.Candle.Open &&
 		market.Price < market.LastPrice &&
-		market.LastPrice < lowerRetracement &&
+		lowerInterval.Candle.Open >= higherRetracement &&
 		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] &&
-		sellPercentDiff > float64(3) && lowerInterval.RSI > 70 {
+		sellPercentDiff > float64(3) && lowerInterval.RSI > 60 {
 		opportunity = "SELL"
 	}
 
