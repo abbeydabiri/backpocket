@@ -484,7 +484,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		lastHigh := data.High[len(data.High)-period10:]
 		lastLow := data.Low[len(data.Low)-period10:]
 
-		for i := 0; i < len(lastClose)-1; i++ {
+		for i := 0; i < len(lastClose); i++ {
 			candleArray = append(candleArray, Candle{
 				Close: lastClose[i],
 				Open:  lastOpen[i],

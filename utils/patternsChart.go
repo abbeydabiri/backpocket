@@ -103,9 +103,9 @@ func isDoubleTop(prices []float64) bool {
 		return false
 	}
 	prices = prices[len(prices)-n:]
-
+	precision := calculatePrecision(prices[n-5], prices[n-4], prices[n-3], prices[n-2])
 	// Peaks must be approximately equal, with a dip between
-	return isApproxEqual(prices[n-5], prices[n-3], 0.01) &&
+	return isApproxEqual(prices[n-5], prices[n-3], precision) &&
 		prices[n-4] < prices[n-5] &&
 		prices[n-4] < prices[n-3]
 }
@@ -117,9 +117,9 @@ func isDoubleBottom(prices []float64) bool {
 		return false
 	}
 	prices = prices[len(prices)-n:]
-
+	precision := calculatePrecision(prices[n-5], prices[n-4], prices[n-3], prices[n-2])
 	// Troughs must be approximately equal, with a peak between
-	return isApproxEqual(prices[n-5], prices[n-3], 0.01) &&
+	return isApproxEqual(prices[n-5], prices[n-3], precision) &&
 		prices[n-4] > prices[n-5] &&
 		prices[n-4] > prices[n-3]
 }
@@ -160,10 +160,11 @@ func isFlag(prices []float64) bool {
 
 	// Ensure a strong prior trend
 	prevTrend := prices[n-6] < prices[n-5] && prices[n-5] < prices[n-4]
+	precision := calculatePrecision(prices[n-5], prices[n-4], prices[n-3], prices[n-2])
 
 	// Check for consolidation (small range in recent candles)
-	flagConsolidation := math.Abs(prices[n-3]-prices[n-2]) < 0.01 &&
-		math.Abs(prices[n-2]-prices[n-1]) < 0.01
+	flagConsolidation := math.Abs(prices[n-3]-prices[n-2]) < precision &&
+		math.Abs(prices[n-2]-prices[n-1]) < precision
 
 	return prevTrend && flagConsolidation
 }
@@ -177,12 +178,13 @@ func isPennant(prices []float64) bool {
 
 	// Ensure strong prior trend
 	priorTrend := prices[n-6] < prices[n-5] && prices[n-5] < prices[n-4]
+	precision := calculatePrecision(prices[n-5], prices[n-4], prices[n-3], prices[n-2])
 
 	// Check for converging trendlines (symmetry in recent prices)
 	lowerSlope := slope(0, prices[n-3], 1, prices[n-2])
 	upperSlope := slope(0, prices[n-2], 1, prices[n-1])
 
-	return priorTrend && lowerSlope > 0 && upperSlope < 0 && math.Abs(upperSlope-lowerSlope) < 0.01
+	return priorTrend && lowerSlope > 0 && upperSlope < 0 && math.Abs(upperSlope-lowerSlope) < precision
 }
 
 // Rectangles
@@ -226,7 +228,8 @@ func isAscendingTriangle(highs, lows []float64) bool {
 	if len(highs) < 3 || len(lows) < 3 {
 		return false
 	}
-	return isApproxEqual(highs[0], highs[2], 0.01) && slope(0, lows[0], 2, lows[2]) > 0
+	precision := calculatePrecision(highs[0], highs[1], lows[0], lows[1])
+	return isApproxEqual(highs[0], highs[2], precision) && slope(0, lows[0], 2, lows[2]) > 0
 }
 
 // Descending Triangle
@@ -234,5 +237,6 @@ func isDescendingTriangle(highs, lows []float64) bool {
 	if len(highs) < 3 || len(lows) < 3 {
 		return false
 	}
-	return isApproxEqual(lows[0], lows[2], 0.01) && slope(0, highs[0], 2, highs[2]) < 0
+	precision := calculatePrecision(highs[0], highs[1], lows[0], lows[1])
+	return isApproxEqual(lows[0], lows[2], precision) && slope(0, highs[0], 2, highs[2]) < 0
 }
