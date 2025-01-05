@@ -79,20 +79,18 @@ func findOpportunity(pair, exchange string,
 	}
 
 	lowerInterval := analysis.Intervals["1m"]
-	higherInterval := analysis.Intervals["30m"]
+	higherInterval := analysis.Intervals["15m"]
 
 	lowerRetracement := lowerInterval.RetracementLevels["0.786"]
 	higherRetracement := lowerInterval.RetracementLevels["0.236"]
 
 	isMarketSupport := false
-	if higherInterval.SMA10.Support == higherInterval.SMA20.Support &&
-		higherInterval.SMA10.Support == higherInterval.SMA50.Support {
+	if higherInterval.SMA10.Support == higherInterval.SMA20.Support {
 		isMarketSupport = true
 	}
 
 	isMarketResistance := false
-	if higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance &&
-		higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance {
+	if higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance {
 		isMarketResistance = true
 	}
 
