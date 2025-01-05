@@ -72,52 +72,39 @@ func findOpportunity(pair, exchange string,
 		return
 	}
 
-	lowerInterval := analysis.Intervals["1m"]
-	higherInterval := analysis.Intervals["5m"]
+	//lower - higher | 1m - 15m | 5m - 1h | 15m - 4h | 30m - 6h | 1h -12h | 4h - 1d | 6h - 3d
 
-	midRetracement := higherInterval.RetracementLevels["0.500"]
+	lowerInterval := analysis.Intervals["1m"]
+	higherInterval := analysis.Intervals["15m"]
+
+	lowerRetracement := higherInterval.RetracementLevels["0.786"]
+	higherRetracement := higherInterval.RetracementLevels["0.236"]
 
 	isMarketSupport := false
 	if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
-		lowerInterval.SMA20.Support == lowerInterval.SMA50.Support &&
-		higherInterval.SMA10.Support == higherInterval.SMA20.Support &&
-		higherInterval.SMA20.Support == higherInterval.SMA50.Support {
+		lowerInterval.SMA20.Support == lowerInterval.SMA50.Support {
 		isMarketSupport = true
 	}
 
 	isMarketResistance := false
 	if lowerInterval.SMA10.Resistance == lowerInterval.SMA20.Resistance &&
-		lowerInterval.SMA20.Resistance == lowerInterval.SMA50.Resistance &&
-		higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance &&
-		higherInterval.SMA20.Resistance == higherInterval.SMA50.Resistance {
+		lowerInterval.SMA20.Resistance == lowerInterval.SMA50.Resistance {
 		isMarketResistance = true
 	}
 
 	//Check for Long // Buy Opportunity
-	// 		Entry: Look for bullish patterns in short-term timeframes (Minutes and Hours) within a neutral-to-bullish overall trend.
-	//		(e.g 1m or 5m is neutral or bearish and patterns are bullish)
-	//		Monitor neutral or bullish patterns in higher timeframes.
-	//		(e.g 5m or 15m is neutral or bearish and patterns are bullish)
-	if lowerInterval.Trend != "Bullish" && higherInterval.Trend != "Bullish" && isMarketSupport &&
-		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
-		market.Close > lowerInterval.Candle.Open && market.Close > higherInterval.Candle.Open &&
-		market.Price > market.LastPrice && market.Close > midRetracement &&
-		buyPercentDiff > float64(3) {
+	if isMarketSupport && lowerInterval.Trend == "Bearish" && showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
+		market.Close > lowerInterval.Candle.Open && market.Price > market.LastPrice && market.Close > lowerRetracement &&
+		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] && buyPercentDiff > float64(3) {
 		opportunity = "BUY"
 	}
 
 	// -- -- --
 
 	//Check for Short // Sell Opportunity
-	// 		Exit: Monitor bearish patterns in higher timeframes (Days and Weeks) within a neutral-to-bullish overall trend.
-	//		(e.g 5m or 15m is neutral or bullish and patterns are bearish)
-	//  	Look for bearish patterns in short-term timeframes within a neutral-to-bearish overall trend.
-	//		(e.g 1m or 5m is neutral or bullish and patterns are bearish)
-	if lowerInterval.Trend != "Bearish" && higherInterval.Trend != "Bearish" && isMarketResistance &&
-		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
-		market.Close < lowerInterval.Candle.Open && market.Close < higherInterval.Candle.Open &&
-		market.Price < market.LastPrice && market.Close < midRetracement &&
-		sellPercentDiff > float64(3) {
+	if isMarketResistance && lowerInterval.Trend == "Bullish" && showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
+		market.Close < lowerInterval.Candle.Open && market.Price < market.LastPrice && market.Close < higherRetracement &&
+		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] && sellPercentDiff > float64(3) {
 		opportunity = "SELL"
 	}
 
