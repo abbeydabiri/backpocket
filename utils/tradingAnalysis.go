@@ -495,7 +495,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 			})
 		}
 		chartPattern = detectChartPatterns(lastClose, lastHigh, lastLow)
-		candlePattern = identifyCandlestickPattern(candleArray[:len(candleArray)-1])
+		candlePattern = identifyCandlestickPattern(candleArray)
 	}
 
 	var currentCandle Candle

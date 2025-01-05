@@ -77,8 +77,8 @@ func findOpportunity(pair, exchange string,
 	lowerInterval := analysis.Intervals["1m"]
 	higherInterval := analysis.Intervals["15m"]
 
-	lowerRetracement := higherInterval.RetracementLevels["0.786"]
-	higherRetracement := higherInterval.RetracementLevels["0.236"]
+	lowerRetracement := lowerInterval.RetracementLevels["0.786"]
+	higherRetracement := lowerInterval.RetracementLevels["0.236"]
 
 	isMarketSupport := false
 	if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
@@ -93,18 +93,28 @@ func findOpportunity(pair, exchange string,
 	}
 
 	//Check for Long // Buy Opportunity
-	if isMarketSupport && lowerInterval.Trend == "Bearish" && showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
-		market.Close > lowerInterval.Candle.Open && market.Price > market.LastPrice && market.Close > lowerRetracement &&
-		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] && buyPercentDiff > float64(3) {
+	if isMarketSupport && lowerInterval.Trend == "Bearish" &&
+		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
+		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
+		market.LastPrice > lowerInterval.Candle.Open &&
+		market.Price > market.LastPrice &&
+		market.LastPrice > higherRetracement &&
+		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] &&
+		buyPercentDiff > float64(3) && lowerInterval.RSI < 30 {
 		opportunity = "BUY"
 	}
 
 	// -- -- --
 
 	//Check for Short // Sell Opportunity
-	if isMarketResistance && lowerInterval.Trend == "Bullish" && showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
-		market.Close < lowerInterval.Candle.Open && market.Price < market.LastPrice && market.Close < higherRetracement &&
-		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] && sellPercentDiff > float64(3) {
+	if isMarketResistance && lowerInterval.Trend == "Bullish" &&
+		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
+		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
+		market.LastPrice < lowerInterval.Candle.Open &&
+		market.Price < market.LastPrice &&
+		market.LastPrice < lowerRetracement &&
+		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] &&
+		sellPercentDiff > float64(3) && lowerInterval.RSI > 70 {
 		opportunity = "SELL"
 	}
 

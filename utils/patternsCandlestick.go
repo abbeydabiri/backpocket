@@ -1,21 +1,35 @@
 package utils
 
-import "math"
+import (
+	"fmt"
+	"math"
+	"strings"
+)
 
 // calculatePrecision dynamically determines the precision based on the smallest value increment in the candlestick.
-func calculatePrecision(open, high, low, close float64) float64 {
-	values := []float64{math.Abs(open - high), math.Abs(open - low), math.Abs(open - close),
-		math.Abs(high - low), math.Abs(high - close), math.Abs(low - close)}
-	minDiff := values[0]
-	for _, val := range values {
-		if val > 0 && val < minDiff {
-			minDiff = val
+func calculatePrecision(numbers ...float64) (smallestUnit float64) {
+	largestDecimals := 0
+
+	for _, number := range numbers {
+		// Convert the number to a string representation
+		numberStr := fmt.Sprintf("%.10f", number) // Up to 18 decimal places for precision
+		// Remove trailing zeros
+		numberStr = strings.TrimRight(numberStr, "0")
+		// Split into integer and decimal parts
+		parts := strings.Split(numberStr, ".")
+		if len(parts) == 2 { // Has decimal part
+			decimals := len(parts[1])
+			if decimals > largestDecimals {
+				largestDecimals = decimals
+			}
 		}
 	}
-	if minDiff < float64(1) {
-		return math.Pow(10, math.Floor(math.Log10(minDiff))-1)
-	}
-	return minDiff
+	largestDecimals--
+
+	// Calculate smallest unit as 1 / 10^largestDecimals
+	smallestUnit = math.Pow(10, -float64(largestDecimals))
+
+	return smallestUnit
 }
 
 // - one candle stick patterns - //
