@@ -66,10 +66,12 @@ func analyzeTrend(data MarketData, period int) trendAnalysis {
 	sma := talib.Sma(dataClose, len(dataClose))
 	entryPrice := sma[len(sma)-1]
 
-	aSupport := talib.Min(data.Low, period)
+	dataLow := data.Low[len(data.Low)-period:]
+	aSupport := talib.Min(dataLow, period)
 	support := aSupport[len(aSupport)-1]
 
-	aResistance := talib.Max(data.High, period)
+	dataHigh := data.High[len(data.High)-period:]
+	aResistance := talib.Max(dataHigh, period)
 	resistance := aResistance[len(aResistance)-1]
 
 	trendSpread := resistance - support
@@ -494,8 +496,8 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		}
 		chartPattern = detectChartPatterns(lastClose, lastHigh, lastLow)
 		candlePattern = fmt.Sprintf("%s + %s",
-			identifyCandlestickPattern(candleArray[:len(candleArray)-2]),
-			identifyCandlestickPattern(candleArray[:len(candleArray)-1]))
+			identifyCandlestickPattern(candleArray[:len(candleArray)-1]),
+			identifyCandlestickPattern(candleArray))
 	}
 
 	var currentCandle Candle
