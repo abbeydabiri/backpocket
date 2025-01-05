@@ -289,7 +289,7 @@ func identifyCandlestickPattern(candles []Candle) string {
 		return "Bearish: Spinning Top"
 	}
 
-	return "Unknown"
+	return "?"
 }
 
 // detectChartPatterns analyzes the given price data to identify patterns
@@ -343,7 +343,7 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 		return "Neutral: Descending Triangle"
 	}
 
-	return "Unknown"
+	return "?"
 }
 
 func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
