@@ -71,10 +71,12 @@ func findOpportunity(pair, exchange string,
 	analysis := getAnalysis(pair, exchange)
 
 	if market.Pair != pair || market.Exchange != exchange {
+		log.Println("findOpportunity skipping market: ", market.Pair, market.Exchange)
 		return
 	}
 
 	if analysis.Pair != pair || analysis.Exchange != exchange {
+		log.Println("findOpportunity skipping analysis: ", analysis.Pair, analysis.Exchange)
 		return
 	}
 
@@ -127,6 +129,8 @@ func findOpportunity(pair, exchange string,
 		market.Close < lowerRetracement && sellPercentDiff > float64(3) {
 		opportunity = "SELL"
 	}
+
+	log.Printf("findOpportunity Result: Pair: %s | Exchange: %s | Opportunity: %s \n", pair, exchange, opportunity)
 
 	return
 }
