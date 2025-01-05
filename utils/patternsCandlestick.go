@@ -12,6 +12,9 @@ func calculatePrecision(open, high, low, close float64) float64 {
 			minDiff = val
 		}
 	}
+	if minDiff < float64(1) {
+		return math.Pow(10, math.Floor(math.Log10(minDiff))-1)
+	}
 	return minDiff
 }
 
@@ -160,7 +163,7 @@ func isBullishThreeWhiteSoldiers(last3 []Candle) bool {
 		last3[2].Open < last3[1].Close
 }
 
-// Bullish Deliberation: Two rising tall white candles, with partial overlap and each close near the high, followed by a small white candle that opens near the preceding close.
+// Bullish Deliberation: Two rising tall green candles, with partial overlap and each close near the high, followed by a small green candle that opens near the preceding close.
 func isBullishDeliberation(last3 []Candle) bool {
 	return last3[0].Close > last3[0].Open &&
 		last3[1].Close > last3[1].Open &&
@@ -171,7 +174,7 @@ func isBullishDeliberation(last3 []Candle) bool {
 		math.Abs(last3[2].Close-last3[2].Open) < math.Abs(last3[1].Close-last3[1].Open)
 }
 
-// Bearish Identical Three Crows: Three identical falling black candles with no overlap (between the bodies) and each close near the low.
+// Bearish Identical Three Crows: Three identical falling red candles with no overlap (between the bodies) and each close near the low.
 func isBearishIdenticalThreeCrows(last3 []Candle) bool {
 	return last3[0].Close < last3[0].Open &&
 		last3[1].Close < last3[1].Open &&
@@ -229,8 +232,21 @@ func isBearishConcealingBabySwallow(last4 []Candle) bool {
 		last4[3].Low < last4[2].Low
 }
 
-// Bearish Three Line Strike: Three rising white candles, with higher closes, followed by a tall black candle that opens above (or equal to) the preceding close and closes below the bodies of the preceding three candles.
+// Bearish Three Line Strike: Three falling red candles, with lower closes, followed by a tall green candle that opens below (or equal to) the preceding close and closes above the bodies of the preceding three candles.
 func isBearishThreeLineStrike(last4 []Candle) bool {
+	return len(last4) == 4 &&
+		last4[0].Close < last4[0].Open &&
+		last4[1].Close < last4[1].Open &&
+		last4[2].Close < last4[2].Open &&
+		last4[3].Close > last4[3].Open &&
+		last4[1].Close < last4[0].Close &&
+		last4[2].Close < last4[1].Close &&
+		last4[3].Open <= last4[2].Close &&
+		last4[3].Close > last4[0].Open
+}
+
+// Bullish Three Line Strike: Three rising green candles, with higher closes, followed by a tall red candle that opens above (or equal to) the preceding close and closes below the bodies of the preceding three candles.
+func isBullishThreeLineStrike(last4 []Candle) bool {
 	return len(last4) == 4 &&
 		last4[0].Close > last4[0].Open &&
 		last4[1].Close > last4[1].Open &&
