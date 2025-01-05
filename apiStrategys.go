@@ -100,8 +100,12 @@ func findOpportunity(pair, exchange string,
 		market.Price > market.LastPrice &&
 		lowerInterval.Candle.Open <= lowerRetracement &&
 		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] &&
-		buyPercentDiff > float64(3) && lowerInterval.RSI < 40 {
+		buyPercentDiff > float64(3) {
 		opportunity = "BUY"
+	}
+	if opportunity == "BUY" && lowerInterval.RSI > 30 {
+		log.Printf("Pair %s | Exchange %s | RSI %f | RSI is above 30, not a good time to buy \n",
+			pair, exchange, lowerInterval.RSI)
 	}
 
 	// -- -- --
@@ -114,8 +118,13 @@ func findOpportunity(pair, exchange string,
 		market.Price < market.LastPrice &&
 		lowerInterval.Candle.Open >= higherRetracement &&
 		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] &&
-		sellPercentDiff > float64(3) && lowerInterval.RSI > 60 {
+		sellPercentDiff > float64(3) {
 		opportunity = "SELL"
+	}
+
+	if opportunity == "SELL" && lowerInterval.RSI < 70 {
+		log.Printf("Pair %s | Exchange %s | RSI %f | RSI is below 70, not a good time to sell \n",
+			pair, exchange, lowerInterval.RSI)
 	}
 
 	if market.Closed == 1 {
