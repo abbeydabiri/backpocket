@@ -21,6 +21,9 @@ var (
 	marketRSIPricesMutex = sync.RWMutex{}
 	bollingerBandsMutex  = sync.RWMutex{}
 
+	opportunityMutex = sync.RWMutex{}
+	opportunityMap   = make(map[string]notifications)
+
 	chanStoplossTakeProfit = make(chan orderbooks, 10240)
 )
 
@@ -121,6 +124,13 @@ func findOpportunity(pair, exchange string,
 		opportunity = "SELL"
 	}
 
+	if market.Closed == 1 {
+		opportunityMutex.Lock()
+		pairexchange := fmt.Sprintf("%s-%s", pair, exchange)
+		opportunityMap[pairexchange] = notifications{Title: "", Message: ""}
+		opportunityMutex.Unlock()
+	}
+
 	return
 }
 
@@ -134,10 +144,10 @@ func apiStrategyStopLossTakeProfit() {
 		orderbookMutex.RLock()
 		orderbookPair := orderbook.Pair
 		orderbookExchange := orderbook.Exchange
-		if len(orderbook.Bids) > 0 {
+		if len(orderbook.Bids) > 3 {
 			orderbookBidPrice = orderbook.Bids[0].Price
 		}
-		if len(orderbook.Asks) > 0 {
+		if len(orderbook.Asks) > 3 {
 			orderbookAskPrice = orderbook.Asks[0].Price
 		}
 		orderBookBidsBaseTotal = orderbook.BidsBaseTotal
@@ -160,20 +170,28 @@ func apiStrategyStopLossTakeProfit() {
 		opportunityFound := findOpportunity(orderbookPair, orderbookExchange, buyPercentDifference, sellPercentDifference)
 
 		if opportunityFound != "" {
-			price := orderbookAskPrice
-			message := "BUY or LONG"
-			if opportunityFound == "SELL" {
-				message = "SELL or SHORT"
-				price = orderbookBidPrice
-			}
+			go func() {
+				price := orderbookAskPrice
+				opportunity := "BUY or LONG"
+				if opportunityFound == "SELL" {
+					price = orderbookBidPrice
+					opportunity = "SELL or SHORT"
+				}
 
-			title := fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange))
-			message = fmt.Sprintf("%s '%s' @ %v", message, orderbookPair, price)
-			log.Printf("Opportunity: %s | %s \n", title, message)
+				pairexchange := fmt.Sprintf("%s-%s", orderbookPair, orderbookExchange)
+				title := fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange))
+				message := fmt.Sprintf("%s '%s' @ %v", opportunity, orderbookPair, price)
 
-			wsBroadcastNotification <- notifications{
-				Title: title, Message: message,
-			}
+				opportunityMutex.Lock()
+				if !strings.Contains(opportunityMap[pairexchange].Message, opportunity) {
+					log.Printf("Opportunity: %s | %s \n", title, message)
+					opportunityMap[pairexchange] = notifications{
+						Title: title, Message: message,
+					}
+					wsBroadcastNotification <- opportunityMap[pairexchange]
+				}
+				opportunityMutex.Unlock()
+			}()
 		}
 
 		//do a mutex RLock loop through orders
