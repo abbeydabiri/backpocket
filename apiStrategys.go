@@ -25,25 +25,16 @@ var (
 )
 
 func showsReversalPatterns(trend string, pattern utils.SummaryPattern) (match bool) {
-	isChartPattern := false
-	isCandlePattern := false
 
 	if strings.Contains(pattern.Chart, trend+":") {
-		isCandlePattern = true
+		match = true
 	}
 
-	candleSticks := strings.Split(pattern.Candle, "+")
-	if strings.Contains(candleSticks[0], trend+":") {
-		isCandlePattern = true
+	if match && strings.Contains(pattern.Candle, trend+":") {
+		match = true
 	}
 
-	if len(candleSticks) > 1 && !isCandlePattern {
-		if strings.Contains(candleSticks[1], trend+":") {
-			isCandlePattern = true
-		}
-	}
-
-	return isChartPattern && isCandlePattern
+	return
 }
 
 func findOpportunity(pair, exchange string,
@@ -81,24 +72,22 @@ func findOpportunity(pair, exchange string,
 	}
 
 	lowerInterval := analysis.Intervals["1m"]
-	higherInterval := analysis.Intervals["15m"]
+	higherInterval := analysis.Intervals["5m"]
 
 	lowerRetracement := lowerInterval.RetracementLevels["0.786"]
 	higherRetracement := lowerInterval.RetracementLevels["0.236"]
 
 	isMarketSupport := false
-	if higherInterval.SMA10.Support == higherInterval.SMA20.Support &&
-		lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
-		lowerInterval.SMA20.Support == higherInterval.SMA50.Support &&
-		lowerInterval.SMA10.Support == higherInterval.SMA10.Support {
+	if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
+		lowerInterval.SMA20.Support == lowerInterval.SMA50.Support &&
+		higherInterval.SMA10.Support == higherInterval.SMA20.Support {
 		isMarketSupport = true
 	}
 
 	isMarketResistance := false
-	if higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance &&
-		lowerInterval.SMA10.Resistance == lowerInterval.SMA20.Resistance &&
-		lowerInterval.SMA20.Resistance == higherInterval.SMA50.Resistance &&
-		lowerInterval.SMA10.Resistance == higherInterval.SMA10.Resistance {
+	if lowerInterval.SMA10.Resistance == lowerInterval.SMA20.Resistance &&
+		lowerInterval.SMA20.Resistance == lowerInterval.SMA50.Resistance &&
+		higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance {
 		isMarketResistance = true
 	}
 
@@ -107,11 +96,12 @@ func findOpportunity(pair, exchange string,
 	//		(e.g 1m or 5m is neutral or bearish and patterns are bullish)
 	//		Monitor neutral or bullish patterns in higher timeframes.
 	//		(e.g 5m or 15m is neutral or bearish and patterns are bullish)
-	if lowerInterval.Trend != "Bullish" && isMarketSupport &&
-		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
-		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
-		market.Close > lowerInterval.Candle.Open && market.Price > market.LastPrice &&
-		market.Close > higherRetracement && buyPercentDiff > float64(3) {
+	if lowerInterval.Trend != "Bullish" && higherInterval.Trend != "Bullish" &&
+		isMarketSupport && showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
+		market.Close > lowerInterval.Candle.Open &&
+		market.Close > higherInterval.Candle.Open &&
+		market.Price > market.LastPrice && market.Close > lowerRetracement &&
+		buyPercentDiff > float64(3) {
 		opportunity = "BUY"
 	}
 
@@ -122,15 +112,14 @@ func findOpportunity(pair, exchange string,
 	//		(e.g 5m or 15m is neutral or bullish and patterns are bearish)
 	//  	Look for bearish patterns in short-term timeframes within a neutral-to-bearish overall trend.
 	//		(e.g 1m or 5m is neutral or bullish and patterns are bearish)
-	if higherInterval.Trend != "Bearish" && isMarketResistance &&
-		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
-		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
-		market.Close < lowerInterval.Candle.Open && market.Price < market.LastPrice &&
-		market.Close < lowerRetracement && sellPercentDiff > float64(3) {
+	if lowerInterval.Trend != "Bearish" && higherInterval.Trend != "Bearish" &&
+		isMarketResistance && showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
+		market.Close < lowerInterval.Candle.Open &&
+		market.Close < higherInterval.Candle.Open &&
+		market.Price < market.LastPrice && market.Close < higherRetracement &&
+		sellPercentDiff > float64(3) {
 		opportunity = "SELL"
 	}
-
-	log.Printf("findOpportunity Result: Pair: %s | Exchange: %s | Opportunity: %s \n", pair, exchange, opportunity)
 
 	return
 }
