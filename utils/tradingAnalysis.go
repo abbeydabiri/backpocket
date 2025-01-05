@@ -163,6 +163,11 @@ func identifyCandlestickPattern(candles []Candle) string {
 		return "Bearish: Three Line Strike"
 	}
 
+	//Bullish Three Line Strike
+	if isBullishThreeLineStrike(candles[len(candles)-4:]) {
+		return "Bullish: Three Line Strike"
+	}
+
 	// - three candle stick patterns - //
 	// Bullish Deliberation (Variation of Three White Soldiers)
 	if isBullishDeliberation(candles[len(candles)-3:]) {
@@ -227,16 +232,6 @@ func identifyCandlestickPattern(candles []Candle) string {
 		return "Bearish: Marubozu"
 	}
 
-	// Bullish Spinning Top
-	if isBullishSpinningTop(latest) {
-		return "Bullish: Spinning Top"
-	}
-
-	// Bearish Spinning Top
-	if isBearishSpinningTop(latest) {
-		return "Bearish: Spinning Top"
-	}
-
 	// Normal Doji
 	if isNormalDoji(latest) {
 		return "Normal Doji"
@@ -282,7 +277,17 @@ func identifyCandlestickPattern(candles []Candle) string {
 		return "Bearish: Shooting Star"
 	}
 
-	return "Neutral: Pattern"
+	// Bullish Spinning Top
+	if isBullishSpinningTop(latest) {
+		return "Bullish: Spinning Top"
+	}
+
+	// Bearish Spinning Top
+	if isBearishSpinningTop(latest) {
+		return "Bearish: Spinning Top"
+	}
+
+	return "Unknown"
 }
 
 // detectChartPatterns analyzes the given price data to identify patterns
@@ -336,7 +341,7 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 		return "Neutral: Descending Triangle"
 	}
 
-	return "Neutral"
+	return "Unknown"
 }
 
 func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
@@ -479,7 +484,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		lastHigh := data.High[len(data.High)-period10:]
 		lastLow := data.Low[len(data.Low)-period10:]
 
-		for i := 0; i < len(lastClose); i++ {
+		for i := 0; i < len(lastClose)-1; i++ {
 			candleArray = append(candleArray, Candle{
 				Close: lastClose[i],
 				Open:  lastOpen[i],
@@ -489,8 +494,8 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		}
 		chartPattern = detectChartPatterns(lastClose, lastHigh, lastLow)
 		candlePattern = fmt.Sprintf("%s + %s",
-			identifyCandlestickPattern(candleArray[:len(candleArray)-1]),
-			identifyCandlestickPattern(candleArray))
+			identifyCandlestickPattern(candleArray[:len(candleArray)-2]),
+			identifyCandlestickPattern(candleArray[:len(candleArray)-1]))
 	}
 
 	var currentCandle Candle

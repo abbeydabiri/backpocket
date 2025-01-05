@@ -28,19 +28,19 @@ func showsReversalPatterns(trend string, pattern utils.SummaryPattern) (match bo
 	isChartPattern := false
 	isCandlePattern := false
 
-	candle := pattern.Candle
-	candleSticks := strings.Split(pattern.Candle, "+")
-
 	if strings.Contains(pattern.Chart, trend+":") {
 		isCandlePattern = true
 	}
 
-	if len(candleSticks) > 1 {
-		candle = candleSticks[1]
+	candleSticks := strings.Split(pattern.Candle, "+")
+	if strings.Contains(candleSticks[0], trend+":") {
+		isCandlePattern = true
 	}
 
-	if strings.Contains(candle, trend+":") {
-		isCandlePattern = true
+	if len(candleSticks) > 1 {
+		if strings.Contains(candleSticks[1], trend+":") {
+			isCandlePattern = true
+		}
 	}
 
 	return isChartPattern && isCandlePattern
@@ -84,24 +84,26 @@ func findOpportunity(pair, exchange string,
 	lowerRetracement := lowerInterval.RetracementLevels["0.786"]
 	higherRetracement := higherInterval.RetracementLevels["0.236"]
 
-	isMarketSupport := false
-	if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
-		lowerInterval.SMA10.Support == lowerInterval.SMA50.Support {
-		isMarketSupport = true
-	}
+	// isMarketSupport := false
+	// if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
+	// 	lowerInterval.SMA10.Support == lowerInterval.SMA50.Support {
+	// 	isMarketSupport = true
+	// }
 
-	isMarketResistance := false
-	if higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance &&
-		higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance {
-		isMarketResistance = true
-	}
+	// isMarketResistance := false
+	// if higherInterval.SMA10.Resistance == higherInterval.SMA20.Resistance &&
+	// 	higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance {
+	// 	isMarketResistance = true
+	// }
 
 	//Check for Long // Buy Opportunity
 	// 		Entry: Look for bullish patterns in short-term timeframes (Minutes and Hours) within a neutral-to-bullish overall trend.
 	//		(e.g 1m or 5m is neutral or bearish and patterns are bullish)
 	//		Monitor neutral or bullish patterns in higher timeframes.
 	//		(e.g 5m or 15m is neutral or bearish and patterns are bullish)
-	if lowerInterval.Trend != "Bullish" && isMarketSupport &&
+	if lowerInterval.Trend != "Bullish" && // isMarketSupport &&
+		market.Close < lowerInterval.SMA20.Entry &&
+		market.Close < higherInterval.SMA20.Entry &&
 		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
 		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
 		market.Close > lowerInterval.Candle.Open && market.Price > market.LastPrice &&
@@ -116,7 +118,9 @@ func findOpportunity(pair, exchange string,
 	//		(e.g 5m or 15m is neutral or bullish and patterns are bearish)
 	//  	Look for bearish patterns in short-term timeframes within a neutral-to-bearish overall trend.
 	//		(e.g 1m or 5m is neutral or bullish and patterns are bearish)
-	if higherInterval.Trend != "Bearish" && isMarketResistance &&
+	if higherInterval.Trend != "Bearish" && //isMarketResistance &&
+		market.Close > lowerInterval.SMA20.Entry &&
+		market.Close > higherInterval.SMA20.Entry &&
 		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
 		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
 		market.Close < lowerInterval.Candle.Open && market.Price < market.LastPrice &&
