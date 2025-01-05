@@ -75,6 +75,7 @@ func findOpportunity(pair, exchange string,
 	//lower - higher | 1m - 15m | 5m - 1h | 15m - 4h | 30m - 6h | 1h -12h | 4h - 1d | 6h - 3d
 
 	lowerInterval := analysis.Intervals["1m"]
+	middleInterval := analysis.Intervals["5m"]
 	higherInterval := analysis.Intervals["15m"]
 
 	lowerRetracement := lowerInterval.RetracementLevels["0.786"]
@@ -95,17 +96,14 @@ func findOpportunity(pair, exchange string,
 	//Check for Long // Buy Opportunity
 	if isMarketSupport && lowerInterval.Trend == "Bearish" &&
 		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
+		showsReversalPatterns("Bullish", middleInterval.Pattern) &&
 		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
 		market.LastPrice > lowerInterval.Candle.Open &&
 		market.Price > market.LastPrice &&
 		lowerInterval.Candle.Open <= lowerRetracement &&
 		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] &&
-		buyPercentDiff > float64(3) {
+		buyPercentDiff > float64(3) && lowerInterval.RSI < 40 {
 		opportunity = "BUY"
-	}
-	if opportunity == "BUY" && lowerInterval.RSI > 30 {
-		log.Printf("Pair %s | Exchange %s | RSI %f | RSI is above 30, not a good time to buy \n",
-			pair, exchange, lowerInterval.RSI)
 	}
 
 	// -- -- --
@@ -113,18 +111,14 @@ func findOpportunity(pair, exchange string,
 	//Check for Short // Sell Opportunity
 	if isMarketResistance && lowerInterval.Trend == "Bullish" &&
 		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
+		showsReversalPatterns("Bearish", middleInterval.Pattern) &&
 		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
 		market.LastPrice < lowerInterval.Candle.Open &&
 		market.Price < market.LastPrice &&
 		lowerInterval.Candle.Open >= higherRetracement &&
 		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] &&
-		sellPercentDiff > float64(3) {
+		sellPercentDiff > float64(3) && lowerInterval.RSI > 60 {
 		opportunity = "SELL"
-	}
-
-	if opportunity == "SELL" && lowerInterval.RSI < 70 {
-		log.Printf("Pair %s | Exchange %s | RSI %f | RSI is below 70, not a good time to sell \n",
-			pair, exchange, lowerInterval.RSI)
 	}
 
 	if market.Closed == 1 {
