@@ -94,38 +94,38 @@ func isLongLeggedDoji(c Candle) bool {
 
 // isBullishHammer checks for a Bullish Hammer pattern (small body near high, long lower shadow).
 func isBullishHammer(c Candle) bool {
-	precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
+	// precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
 	body := math.Abs(c.Open - c.Close)
 	lowerShadow := math.Min(c.Open, c.Close) - c.Low
 	upperShadow := c.High - math.Max(c.Open, c.Close)
-	return lowerShadow > 2*body && upperShadow <= precision && c.Close > c.Open
+	return lowerShadow > 2*body && upperShadow <= lowerShadow && c.Close > c.Open
 }
 
 // isBullishInvertedHammer checks for a Bullish Inverted Hammer pattern (small body near low, long upper shadow).
 func isBullishInvertedHammer(c Candle) bool {
-	precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
+	// precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
 	body := math.Abs(c.Open - c.Close)
 	upperShadow := c.High - math.Max(c.Open, c.Close)
 	lowerShadow := math.Min(c.Open, c.Close) - c.Low
-	return upperShadow > 2*body && lowerShadow <= precision && c.Close > c.Open
+	return upperShadow > 2*body && lowerShadow <= upperShadow && c.Close > c.Open
 }
 
 // isBearishHangingMan checks for a Bearish Hanging Man pattern (small body near high, long lower shadow).
 func isBearishHangingMan(c Candle) bool {
-	precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
+	// precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
 	body := math.Abs(c.Open - c.Close)
 	lowerShadow := math.Min(c.Open, c.Close) - c.Low
 	upperShadow := c.High - math.Max(c.Open, c.Close)
-	return lowerShadow > 2*body && upperShadow <= precision && c.Close < c.Open
+	return lowerShadow > 2*body && upperShadow <= lowerShadow && c.Close < c.Open
 }
 
 // isBearishShootingStar checks for a Bearish Shooting Star pattern (small body near low, long upper shadow).
 func isBearishShootingStar(c Candle) bool {
-	precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
+	// precision := calculatePrecision(c.Open, c.High, c.Low, c.Close)
 	body := math.Abs(c.Open - c.Close)
 	upperShadow := c.High - math.Max(c.Open, c.Close)
 	lowerShadow := math.Min(c.Open, c.Close) - c.Low
-	return upperShadow > 2*body && lowerShadow <= precision && c.Close < c.Open
+	return upperShadow > 2*body && lowerShadow <= upperShadow && c.Close < c.Open
 }
 
 // - two candle stick patterns - //

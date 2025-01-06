@@ -83,18 +83,22 @@ func findOpportunity(pair, exchange string,
 
 	isMarketSupport := false
 	if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
-		lowerInterval.SMA20.Support == lowerInterval.SMA50.Support {
+		lowerInterval.SMA10.Support == lowerInterval.SMA50.Support &&
+		lowerInterval.SMA10.Support == middleInterval.SMA20.Support &&
+		lowerInterval.SMA10.Support == higherInterval.SMA10.Support {
 		isMarketSupport = true
 	}
 
 	isMarketResistance := false
 	if lowerInterval.SMA10.Resistance == lowerInterval.SMA20.Resistance &&
-		lowerInterval.SMA20.Resistance == lowerInterval.SMA50.Resistance {
+		lowerInterval.SMA10.Resistance == lowerInterval.SMA50.Resistance &&
+		lowerInterval.SMA10.Resistance == middleInterval.SMA20.Resistance &&
+		lowerInterval.SMA10.Resistance == higherInterval.SMA10.Resistance {
 		isMarketResistance = true
 	}
 
 	//Check for Long // Buy Opportunity
-	if isMarketSupport && lowerInterval.Trend == "Bearish" &&
+	if isMarketSupport && lowerInterval.Trend != "Bullish" &&
 		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
 		showsReversalPatterns("Bullish", middleInterval.Pattern) &&
 		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
@@ -109,14 +113,14 @@ func findOpportunity(pair, exchange string,
 	// -- -- --
 
 	//Check for Short // Sell Opportunity
-	if isMarketResistance && lowerInterval.Trend == "Bullish" &&
+	if isMarketResistance && lowerInterval.Trend != "Bearish" &&
 		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
 		showsReversalPatterns("Bearish", middleInterval.Pattern) &&
 		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
 		market.LastPrice < lowerInterval.Candle.Open &&
 		market.Price < market.LastPrice &&
 		lowerInterval.Candle.Open >= higherRetracement &&
-		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["higher"] &&
+		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["upper"] &&
 		sellPercentDiff > float64(3) && lowerInterval.RSI > 60 {
 		opportunity = "SELL"
 	}
