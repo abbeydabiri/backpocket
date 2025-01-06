@@ -56,6 +56,7 @@ func main() {
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/api/v1/kline", restHandlerKline).Methods("GET")
 	muxRouter.HandleFunc("/api/v1/analysis", restHandlerAnalysis).Methods("GET")
+	muxRouter.HandleFunc("/api/v1/opportunity", restHandlerOpportunity).Methods("GET")
 
 	wsHandlerAssetBroadcast()
 	muxRouter.HandleFunc("/websocket/assets", wsHandlerAssets)
