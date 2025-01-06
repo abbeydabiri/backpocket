@@ -40,126 +40,6 @@ func showsReversalPatterns(trend string, pattern utils.SummaryPattern) (match bo
 	return
 }
 
-func findOpportunity(pair, exchange string,
-	buyPercentDiff, sellPercentDiff float64) (opportunity string) {
-	// Optimal Entry and Exit Points
-	// 	1. For Longs:
-	// 		Entry: Look for bullish patterns in short-term timeframes (Minutes and Hours) within a neutral-to-bullish overall trend.
-	//		(e.g 1m or 5m is neutral or bearish and patterns are bullish)
-	//
-	// 		Exit: Monitor bearish patterns in higher timeframes (Days and Weeks) within a neutral-to-bullish overall trend.
-	//		(e.g 5m or 15m is neutral or bullish and patterns are bearish)
-	//
-	// 	2. For Shorts:
-	// 		Entry: Look for bearish patterns in short-term timeframes within a neutral-to-bearish overall trend.
-	//		(e.g 1m or 5m is neutral or bullish and patterns are bearish)
-	//
-	// 		Exit: Monitor neutral or bullish patterns in higher timeframes.
-	//		(e.g 5m or 15m is neutral or bearish and patterns are bullish)
-
-	if pair == "" || exchange == "" {
-		return
-	}
-
-	analysis := getAnalysis(pair, exchange)
-	oppStruct := analyseOpportunity(analysis, DefaultTimeframe, 0)
-
-	if oppStruct.Action == "BUY" {
-		if buyPercentDiff > float64(3) {
-			opportunity = oppStruct.Action
-		} else {
-			log.Printf("Skipping BUY Opportunity: %s | %s - @ %v due to low buyPercentDiff %v \n",
-				oppStruct.Action, pair, oppStruct.Price, buyPercentDiff)
-		}
-		return
-	}
-
-	if oppStruct.Action == "SELL" {
-		if sellPercentDiff > float64(3) {
-			opportunity = oppStruct.Action
-		} else {
-			log.Printf("Skipping SELL Opportunity: %s | %s - @ %v due to low sellPercentDiff %v \n",
-				oppStruct.Action, pair, oppStruct.Price, sellPercentDiff)
-			return
-		}
-	}
-
-	return
-
-	// market := getMarket(pair, exchange)
-	// analysis := getAnalysis(pair, exchange)
-
-	// if market.Pair != pair || market.Exchange != exchange {
-	// 	return
-	// }
-
-	// if analysis.Pair != pair || analysis.Exchange != exchange {
-	// 	return
-	// }
-
-	// //lower - higher | 1m - 15m | 5m - 1h | 15m - 4h | 30m - 6h | 1h -12h | 4h - 1d | 6h - 3d
-
-	// lowerInterval := analysis.Intervals["1m"]
-	// middleInterval := analysis.Intervals["5m"]
-	// higherInterval := analysis.Intervals["15m"]
-
-	// lowerRetracement := lowerInterval.RetracementLevels["0.786"]
-	// higherRetracement := lowerInterval.RetracementLevels["0.236"]
-
-	// isMarketSupport := false
-	// if lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
-	// 	lowerInterval.SMA10.Support == lowerInterval.SMA50.Support &&
-	// 	lowerInterval.SMA10.Support == middleInterval.SMA20.Support &&
-	// 	lowerInterval.SMA10.Support == higherInterval.SMA10.Support {
-	// 	isMarketSupport = true
-	// }
-
-	// isMarketResistance := false
-	// if lowerInterval.SMA10.Resistance == lowerInterval.SMA20.Resistance &&
-	// 	lowerInterval.SMA10.Resistance == lowerInterval.SMA50.Resistance &&
-	// 	lowerInterval.SMA10.Resistance == middleInterval.SMA20.Resistance &&
-	// 	lowerInterval.SMA10.Resistance == higherInterval.SMA10.Resistance {
-	// 	isMarketResistance = true
-	// }
-
-	// //Check for Long // Buy Opportunity
-	// if isMarketSupport && lowerInterval.Trend != "Bullish" &&
-	// 	showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
-	// 	showsReversalPatterns("Bullish", middleInterval.Pattern) &&
-	// 	showsReversalPatterns("Bullish", higherInterval.Pattern) &&
-	// 	market.LastPrice > lowerInterval.Candle.Open &&
-	// 	market.Price > market.LastPrice &&
-	// 	lowerInterval.Candle.Open <= lowerRetracement &&
-	// 	lowerInterval.Candle.Open <= lowerInterval.BollingerBands["lower"] &&
-	// 	buyPercentDiff > float64(3) && lowerInterval.RSI < 40 {
-	// 	opportunity = "BUY"
-	// }
-
-	// // -- -- --
-
-	// //Check for Short // Sell Opportunity
-	// if isMarketResistance && lowerInterval.Trend != "Bearish" &&
-	// 	showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
-	// 	showsReversalPatterns("Bearish", middleInterval.Pattern) &&
-	// 	showsReversalPatterns("Bearish", higherInterval.Pattern) &&
-	// 	market.LastPrice < lowerInterval.Candle.Open &&
-	// 	market.Price < market.LastPrice &&
-	// 	lowerInterval.Candle.Open >= higherRetracement &&
-	// 	lowerInterval.Candle.Open >= lowerInterval.BollingerBands["upper"] &&
-	// 	sellPercentDiff > float64(3) && lowerInterval.RSI > 60 {
-	// 	opportunity = "SELL"
-	// }
-
-	// if market.Closed == 1 {
-	// 	opportunityMutex.Lock()
-	// 	pairexchange := fmt.Sprintf("%s-%s", pair, exchange)
-	// 	opportunityMap[pairexchange] = notifications{Title: "", Message: ""}
-	// 	opportunityMutex.Unlock()
-	// }
-
-	// return
-}
-
 func apiStrategyStopLossTakeProfit() {
 
 	for orderbook := range chanStoplossTakeProfit {
@@ -193,24 +73,39 @@ func apiStrategyStopLossTakeProfit() {
 
 		sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
 		buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
-		opportunityFound := findOpportunity(orderbookPair, orderbookExchange, buyPercentDifference, sellPercentDifference)
 
+		analysis := getAnalysis(orderbookPair, orderbookExchange)
+		opportunity := analyseOpportunity(analysis, DefaultTimeframe, 0)
+
+		if opportunity.Action == "BUY" {
+			if buyPercentDifference < float64(3) {
+				opportunity.Action = ""
+			}
+		}
+
+		if opportunity.Action == "SELL" {
+			if sellPercentDifference < float64(3) {
+				opportunity.Action = ""
+			}
+		}
+		opportunityFound := opportunity.Action
 		if opportunityFound != "" {
 			go func() {
 				price := orderbookAskPrice
-				opportunity := "BUY or LONG"
+				message := "BUY or LONG"
 				if opportunityFound == "SELL" {
 					price = orderbookBidPrice
-					opportunity = "SELL or SHORT"
+					message = "SELL or SHORT"
 				}
 
 				pairexchange := fmt.Sprintf("%s-%s", orderbookPair, orderbookExchange)
 				title := fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange))
-				message := fmt.Sprintf("%s '%s' @ %v", opportunity, orderbookPair, price)
-				log.Printf("Opportunity: %s | %s \n", title, message)
+				message = fmt.Sprintf("%s '%s' @ %v | Takeprofit @ %v | Stoploss @ %v",
+					opportunityFound, orderbookPair, price, opportunity.Takeprofit, opportunity.Stoploss)
 
 				opportunityMutex.Lock()
-				if !strings.Contains(opportunityMap[pairexchange].Message, opportunity) {
+				if !strings.Contains(opportunityMap[pairexchange].Message, opportunity.Action) {
+					log.Printf("Opportunity: %s | %s \n", title, message)
 					opportunityMap[pairexchange] = notifications{
 						Title: title, Message: message,
 					}
@@ -219,10 +114,6 @@ func apiStrategyStopLossTakeProfit() {
 				opportunityMutex.Unlock()
 			}()
 		}
-
-		// if opportunityFound == "" {
-		// 	continue
-		// }
 
 		//do a mutex RLock loop through orders
 		orderListMutex.RLock()

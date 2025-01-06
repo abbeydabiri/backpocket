@@ -522,7 +522,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		RSI:            smoothedRSI,
 		BollingerBands: bollingerbands,
 		RetracementLevels: calculateFibonacciRetracement(
-			currentCandle.High,
-			currentCandle.Low),
-	}, nil
+			data.High[len(data.High)-2],
+			data.Low[len(data.Low)-2],
+		)}, nil
 }

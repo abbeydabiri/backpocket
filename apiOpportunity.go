@@ -12,13 +12,13 @@ import (
 var (
 	TimeframeMaps = map[string][]string{
 		"1m":  []string{"1m", "5m", "15m"},
-		"5m":  []string{"1m", "5m", "15m", "30m"},
-		"15m": []string{"1m", "15m", "30m", "1h"},
-		"30m": []string{"1m", "30m", "1h", "4h"},
-		"1h":  []string{"1m", "1h", "4h", "6h"},
-		"4h":  []string{"1m", "4h", "6h", "12h"},
-		"6h":  []string{"1m", "6h", "12h", "1d"},
-		"12h": []string{"1m", "12h", "1d", "3d"},
+		"5m":  []string{"5m", "15m", "30m"},
+		"15m": []string{"15m", "30m", "1h"},
+		"30m": []string{"30m", "1h", "4h"},
+		"1h":  []string{"1h", "4h", "6h"},
+		"4h":  []string{"4h", "6h", "12h"},
+		"6h":  []string{"6h", "12h", "1d"},
+		"12h": []string{"12h", "1d", "3d"},
 	}
 )
 
@@ -69,11 +69,13 @@ func restHandlerOpportunity(httpRes http.ResponseWriter, httpReq *http.Request) 
 }
 
 type opportunityType struct {
-	Pair      string
-	Action    string
-	Price     float64
-	Timeframe string
-	Exchange  string
+	Pair       string
+	Action     string
+	Price      float64
+	Timeframe  string
+	Exchange   string
+	Stoploss   float64
+	Takeprofit float64
 }
 
 func analyseOpportunity(analysis analysisType, timeframe string, price float64) (opportunity opportunityType) {
@@ -88,21 +90,27 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	market := getMarket(analysis.Pair, analysis.Exchange)
 	if price == 0 {
 		price = market.Price
-		if market.Price == 0 {
-			price = utils.TruncateFloat((analysis.Intervals["1m"].Candle.Close+analysis.Intervals["1m"].Candle.Open)/2, 8)
-		}
 	}
 
-	opportunity.Pair = analysis.Pair
-	opportunity.Exchange = analysis.Exchange
-	opportunity.Timeframe = timeframe
-	opportunity.Price = price
+	for _, interval := range analysis.Intervals {
+		interval.Candle.Close = price
+		interval.Trend = utils.OverallTrend(interval.SMA10.Entry,
+			interval.SMA20.Entry, interval.SMA50.Entry, interval.Candle.Close)
+	}
 
 	// log.Printf("\n\n---1m Candle----: %+v", analysis.Intervals["1m"].Pattern)
 
 	lowerInterval := analysis.Intervals[TimeframeMaps[timeframe][0]]
 	middleInterval := analysis.Intervals[TimeframeMaps[timeframe][1]]
 	higherInterval := analysis.Intervals[TimeframeMaps[timeframe][2]]
+
+	if price == 0 {
+		price = utils.TruncateFloat((lowerInterval.Candle.Close+lowerInterval.Candle.Open)/2, 8)
+	}
+	opportunity.Pair = analysis.Pair
+	opportunity.Exchange = analysis.Exchange
+	opportunity.Timeframe = timeframe
+	opportunity.Price = price
 
 	retracement0236 := lowerInterval.RetracementLevels["0.236"]
 	retracement0786 := lowerInterval.RetracementLevels["0.786"]
@@ -136,14 +144,15 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	//Check for Long // Buy Opportunity
 	if isMarketSupport && lowerInterval.Trend != "Bullish" &&
 		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
-		showsReversalPatterns("Bullish", middleInterval.Pattern) &&
-		showsReversalPatterns("Bullish", higherInterval.Pattern) &&
+		(showsReversalPatterns("Bullish", middleInterval.Pattern) ||
+			showsReversalPatterns("Bullish", higherInterval.Pattern)) &&
 		opportunity.Price <= lowerInterval.SMA10.Entry &&
 		opportunity.Price >= lowerInterval.Candle.Open &&
-		(lowerInterval.Candle.Open >= retracement0786 ||
-			opportunity.Price <= retracement0236) &&
+		opportunity.Price >= retracement0786 &&
 		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI < 44 {
 		opportunity.Action = "BUY"
+		opportunity.Stoploss = lowerInterval.SMA20.Support
+		opportunity.Takeprofit = lowerInterval.SMA50.Resistance
 	}
 	// log.Println("--------")
 	// log.Println("--------")
@@ -158,8 +167,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	// log.Println("opportunity.Price <= lowerInterval.SMA10.Entry:", opportunity.Price <= lowerInterval.SMA10.Entry, opportunity.Price, lowerInterval.SMA10.Entry)
 	// log.Println("opportunity.Price >= lowerInterval.Candle.Open:", opportunity.Price >= lowerInterval.Candle.Open, opportunity.Price, lowerInterval.Candle.Open)
-	// log.Println("lowerInterval.Candle.Open >= retracement0786:", lowerInterval.Candle.Open >= retracement0786, lowerInterval.Candle.Open, retracement0786)
-	// log.Println("opportunity.Price <= retracement0236:", opportunity.Price <= retracement0236, opportunity.Price, retracement0236)
+	// log.Println("opportunity.Price >= retracement0786:", opportunity.Price >= retracement0786, opportunity.Price, retracement0786)
 
 	// log.Println("lowerInterval.Candle.Open <= lowerInterval.BollingerBands[middle]:", lowerInterval.Candle.Open <= lowerInterval.BollingerBands["middle"], lowerInterval.Candle.Open, lowerInterval.BollingerBands["middle"])
 	// log.Println("lowerInterval.RSI < 40:", lowerInterval.RSI)
@@ -169,14 +177,15 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	//Check for Short // Sell Opportunity
 	if isMarketResistance && lowerInterval.Trend != "Bearish" &&
 		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
-		showsReversalPatterns("Bearish", middleInterval.Pattern) &&
-		showsReversalPatterns("Bearish", higherInterval.Pattern) &&
+		(showsReversalPatterns("Bearish", middleInterval.Pattern) ||
+			showsReversalPatterns("Bearish", higherInterval.Pattern)) &&
 		opportunity.Price >= lowerInterval.SMA10.Entry &&
 		opportunity.Price <= lowerInterval.Candle.Open &&
-		(lowerInterval.Candle.Open <= retracement0236 ||
-			opportunity.Price <= retracement0786) &&
+		opportunity.Price <= retracement0236 &&
 		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI > 55 {
 		opportunity.Action = "SELL"
+		opportunity.Stoploss = lowerInterval.SMA20.Resistance
+		opportunity.Takeprofit = lowerInterval.SMA50.Support
 	}
 	// log.Println("--------")
 	// log.Println("--------")
@@ -191,8 +200,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	// log.Println("opportunity.Price >= lowerInterval.SMA10.Entry:", opportunity.Price >= lowerInterval.SMA10.Entry, opportunity.Price, lowerInterval.SMA10.Entry)
 	// log.Println("opportunity.Price <= lowerInterval.Candle.Open:", opportunity.Price <= lowerInterval.Candle.Open, opportunity.Price, lowerInterval.Candle.Open)
-	// log.Println("lowerInterval.Candle.Open <= retracement0236:", lowerInterval.Candle.Open <= retracement0236, lowerInterval.Candle.Open, retracement0236)
-	// log.Println("opportunity.Price <= retracement0786:", opportunity.Price <= retracement0786, opportunity.Price, retracement0786)
+	// log.Println("opportunity.Price <= retracement0236:", opportunity.Price <= retracement0236, opportunity.Price, retracement0236)
 
 	// log.Println("lowerInterval.Candle.Open >= lowerInterval.BollingerBands[middle]:", lowerInterval.Candle.Open >= lowerInterval.BollingerBands["middle"], lowerInterval.Candle.Open, lowerInterval.BollingerBands["middle"])
 	// log.Println("lowerInterval.RSI > 55:", lowerInterval.RSI)
