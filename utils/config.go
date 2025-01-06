@@ -22,8 +22,6 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"backpocket/models"
 )
 
 const (
@@ -134,14 +132,14 @@ func ConnectDB() {
 	db.SetMaxOpenConns(100)
 	db.SetConnMaxLifetime(time.Hour)
 
-	var modelsList []interface{}
-	modelsList = append(modelsList, &models.Asset{})
-	modelsList = append(modelsList, &models.Order{})
-	modelsList = append(modelsList, &models.Market{})
+	// var modelsList []interface{}
+	// modelsList = append(modelsList, &models.Asset{})
+	// modelsList = append(modelsList, &models.Order{})
+	// modelsList = append(modelsList, &models.Market{})
 
-	if err := SqlDB.AutoMigrate(modelsList...); err != nil {
-		log.Panicf("Error migrating database: %v", err)
-	}
+	// if err := SqlDB.AutoMigrate(modelsList...); err != nil {
+	// 	log.Panicf("Error migrating database: %v", err)
+	// }
 
 }
 
