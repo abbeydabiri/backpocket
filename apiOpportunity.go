@@ -149,7 +149,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price <= lowerInterval.SMA10.Entry &&
 		opportunity.Price >= lowerInterval.Candle.Open &&
 		opportunity.Price >= retracement0786 &&
-		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI < 44 {
+		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI < 50 {
 		opportunity.Action = "BUY"
 		opportunity.Stoploss = lowerInterval.SMA50.Support
 		opportunity.Takeprofit = middleInterval.SMA50.Resistance
@@ -170,7 +170,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	// log.Println("opportunity.Price >= retracement0786:", opportunity.Price >= retracement0786, opportunity.Price, retracement0786)
 
 	// log.Println("lowerInterval.Candle.Open <= lowerInterval.BollingerBands[middle]:", lowerInterval.Candle.Open <= lowerInterval.BollingerBands["middle"], lowerInterval.Candle.Open, lowerInterval.BollingerBands["middle"])
-	// log.Println("lowerInterval.RSI < 40:", lowerInterval.RSI)
+	// log.Println("lowerInterval.RSI < 50:", lowerInterval.RSI)
 
 	// -- -- --
 
@@ -182,7 +182,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price >= lowerInterval.SMA10.Entry &&
 		opportunity.Price <= lowerInterval.Candle.Open &&
 		opportunity.Price <= retracement0236 &&
-		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI > 55 {
+		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI > 50 {
 		opportunity.Action = "SELL"
 		opportunity.Stoploss = lowerInterval.SMA50.Resistance
 		opportunity.Takeprofit = lowerInterval.SMA50.Support
@@ -203,7 +203,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	// log.Println("opportunity.Price <= retracement0236:", opportunity.Price <= retracement0236, opportunity.Price, retracement0236)
 
 	// log.Println("lowerInterval.Candle.Open >= lowerInterval.BollingerBands[middle]:", lowerInterval.Candle.Open >= lowerInterval.BollingerBands["middle"], lowerInterval.Candle.Open, lowerInterval.BollingerBands["middle"])
-	// log.Println("lowerInterval.RSI > 55:", lowerInterval.RSI)
+	// log.Println("lowerInterval.RSI >  50:", lowerInterval.RSI)
 
 	if market.Closed == 1 {
 		opportunityMutex.Lock()
