@@ -121,7 +121,10 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		middleInterval.SMA20.Support == higherInterval.SMA10.Support) ||
 		(lowerInterval.SMA10.Support == lowerInterval.SMA50.Support &&
 			middleInterval.SMA10.Support == middleInterval.SMA50.Support &&
-			higherInterval.SMA10.Support == higherInterval.SMA50.Support) {
+			higherInterval.SMA10.Support == higherInterval.SMA50.Support) ||
+		(lowerInterval.SMA10.Support == lowerInterval.SMA20.Support &&
+			lowerInterval.SMA50.Support == middleInterval.SMA10.Support &&
+			higherInterval.Trend == "Bullish") {
 		isMarketSupport = true
 	}
 
@@ -130,7 +133,10 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		middleInterval.SMA20.Resistance == higherInterval.SMA10.Resistance) ||
 		(lowerInterval.SMA10.Resistance == lowerInterval.SMA50.Resistance &&
 			middleInterval.SMA10.Resistance == middleInterval.SMA50.Resistance &&
-			higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance) {
+			higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance) ||
+		(lowerInterval.SMA10.Resistance == lowerInterval.SMA20.Resistance &&
+			lowerInterval.SMA50.Resistance == middleInterval.SMA10.Resistance &&
+			higherInterval.Trend == "Bearish") {
 		isMarketResistance = true
 	}
 
@@ -142,7 +148,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 			(showsReversalPatterns("Bullish", middleInterval.Pattern) && showsReversalPatterns("Bullish", higherInterval.Pattern))) &&
 
 		opportunity.Price <= middleInterval.BollingerBands["middle"] &&
-		higherInterval.Candle.Open < opportunity.Price &&
+		(higherInterval.Candle.Open < opportunity.Price ||
+			higherInterval.Trend == "Bullish") &&
 		opportunity.Price > lowerInterval.Candle.Open &&
 		opportunity.Price >= retracement0236 &&
 		lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry &&
@@ -179,7 +186,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 			(showsReversalPatterns("Bearish", middleInterval.Pattern) && showsReversalPatterns("Bearish", higherInterval.Pattern))) &&
 
 		opportunity.Price >= middleInterval.BollingerBands["middle"] &&
-		higherInterval.Candle.Open > opportunity.Price &&
+		(higherInterval.Candle.Open > opportunity.Price ||
+			higherInterval.Trend == "Bearish") &&
 		opportunity.Price < lowerInterval.Candle.Open &&
 		opportunity.Price <= retracement0786 &&
 		lowerInterval.Candle.Open >= lowerInterval.SMA10.Entry &&
