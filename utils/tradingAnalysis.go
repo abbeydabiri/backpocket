@@ -55,6 +55,7 @@ type Summary struct {
 	SMA50             trendAnalysis
 	RetracementLevels map[string]float64
 	Candle            Candle
+	PrevCandle        Candle
 }
 
 // analyzeTrend identifies the trend based on SMA and price action.
@@ -499,12 +500,19 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		candlePattern = identifyCandlestickPattern(candleArray)
 	}
 
-	var currentCandle Candle
+	var currentCandle, prevCandle Candle
 	if len(data.Close) > 1 {
 		currentCandle.Close = data.Close[len(data.Close)-1]
 		currentCandle.High = data.High[len(data.High)-1]
 		currentCandle.Low = data.Low[len(data.Low)-1]
 		currentCandle.Open = data.Open[len(data.Open)-1]
+	}
+
+	if len(data.Close) > 2 {
+		prevCandle.Close = data.Close[len(data.Close)-2]
+		prevCandle.High = data.High[len(data.High)-2]
+		prevCandle.Low = data.Low[len(data.Low)-2]
+		prevCandle.Open = data.Open[len(data.Open)-2]
 	}
 
 	trendName := OverallTrend(analysis10.Entry, analysis20.Entry, analysis50.Entry, currentCandle.Close)
@@ -516,6 +524,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 			Candle: candlePattern,
 		},
 		Candle:         currentCandle,
+		PrevCandle:     prevCandle,
 		SMA10:          analysis10,
 		SMA20:          analysis20,
 		SMA50:          analysis50,
