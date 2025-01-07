@@ -151,8 +151,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price >= retracement0786 &&
 		lowerInterval.Candle.Open <= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI < 44 {
 		opportunity.Action = "BUY"
-		opportunity.Stoploss = lowerInterval.SMA20.Support
-		opportunity.Takeprofit = lowerInterval.SMA50.Resistance
+		opportunity.Stoploss = lowerInterval.SMA50.Support
+		opportunity.Takeprofit = middleInterval.SMA50.Resistance
 	}
 	// log.Println("--------")
 	// log.Println("--------")
@@ -184,7 +184,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price <= retracement0236 &&
 		lowerInterval.Candle.Open >= lowerInterval.BollingerBands["middle"] && lowerInterval.RSI > 55 {
 		opportunity.Action = "SELL"
-		opportunity.Stoploss = lowerInterval.SMA20.Resistance
+		opportunity.Stoploss = lowerInterval.SMA50.Resistance
 		opportunity.Takeprofit = lowerInterval.SMA50.Support
 	}
 	// log.Println("--------")

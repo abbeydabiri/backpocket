@@ -75,7 +75,7 @@ func apiStrategyStopLossTakeProfit() {
 		buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
 		analysis := getAnalysis(orderbookPair, orderbookExchange)
-		opportunity := analyseOpportunity(analysis, DefaultTimeframe, 0)
+		opportunity := analyseOpportunity(analysis, "5m", 0)
 
 		if opportunity.Action == "BUY" {
 			if buyPercentDifference < float64(3) {
