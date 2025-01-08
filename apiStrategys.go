@@ -91,17 +91,28 @@ func apiStrategyStopLossTakeProfit() {
 		opportunityFound := opportunity.Action
 		if opportunityFound != "" {
 			go func() {
-				price := orderbookAskPrice
-				message := "BUY or LONG"
-				if opportunityFound == "SELL" {
+
+				var price float64
+				title := ""
+				message := ""
+				switch opportunity.Action {
+				case "BUY":
+					price = orderbookAskPrice
+					title = "BUY or LONG " + orderbookPair
+					if strings.Contains(analysis.Trend, "Bearish") {
+						title = "*BEARISH CAUTION*" + message
+					}
+				case "SELL":
 					price = orderbookBidPrice
-					message = "SELL or SHORT"
+					message = "SELL or SHORT " + orderbookPair
+					if strings.Contains(analysis.Trend, "Bullish") {
+						title = "*BULLISH CAUTION*" + message
+					}
 				}
 
 				pairexchange := fmt.Sprintf("%s-%s", orderbookPair, orderbookExchange)
-				title := fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange))
-				message = fmt.Sprintf("%s '%s' @ %v | Takeprofit @ %v | Stoploss @ %v",
-					message, orderbookPair, price, opportunity.Takeprofit, opportunity.Stoploss)
+				message = fmt.Sprintf("Price: %v | Takeprofit: %v | Stoploss: %v",
+					price, opportunity.Takeprofit, opportunity.Stoploss)
 
 				opportunityMutex.Lock()
 				if !strings.Contains(opportunityMap[pairexchange].Message, opportunity.Action) {

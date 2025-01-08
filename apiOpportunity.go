@@ -218,19 +218,6 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry : %v | %v - %v", lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry, lowerInterval.Candle.Open, lowerInterval.SMA20.Entry))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.RSI %v > 65 : %v", lowerInterval.RSI, lowerInterval.RSI > 65))
 
-	opportunity.Analysis = map[string]interface{}{
-		"Buy":  buyAnalysis,
-		"Sell": sellAnalysis,
-	}
-
-	if opportunity.Action == "BUY" && strings.Contains(analysis.Trend, "Bearish") {
-		opportunity.Action = "SELL"
-	}
-
-	if opportunity.Action == "SELL" && strings.Contains(analysis.Trend, "Bullish") {
-		opportunity.Action = "BUY"
-	}
-
 	switch opportunity.Action {
 	case "BUY":
 		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*0.99, 8)
@@ -238,6 +225,11 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	case "SELL":
 		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*1.01, 8)
 		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*0.97, 8)
+	}
+
+	opportunity.Analysis = map[string]interface{}{
+		"Buy":  buyAnalysis,
+		"Sell": sellAnalysis,
 	}
 
 	if market.Closed == 1 {
