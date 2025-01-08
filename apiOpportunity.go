@@ -161,8 +161,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		lowerInterval.RSI < 35 {
 
 		opportunity.Action = "BUY"
-		opportunity.Stoploss = utils.TruncateFloat(lowerInterval.SMA50.Support-(opportunity.Price-lowerInterval.SMA50.Support)*10, 8)
-		opportunity.Takeprofit = utils.TruncateFloat(lowerInterval.SMA50.Resistance+(lowerInterval.SMA50.Resistance-opportunity.Price)*2, 8)
+		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*0.99, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(lowerInterval.SMA50.Resistance*1.02, 8)
 	}
 	buyAnalysis := []string{}
 
@@ -201,8 +201,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		lowerInterval.RSI > 65 {
 
 		opportunity.Action = "SELL"
-		opportunity.Stoploss = utils.TruncateFloat(lowerInterval.SMA50.Resistance+(lowerInterval.SMA50.Resistance-opportunity.Price)*10, 8)
-		opportunity.Takeprofit = utils.TruncateFloat(lowerInterval.SMA50.Support-(opportunity.Price-lowerInterval.SMA50.Support)*2, 8)
+		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*1.01, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(lowerInterval.SMA50.Support*0.98, 8)
 
 	}
 	sellAnalysis := []string{}

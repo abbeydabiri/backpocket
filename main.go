@@ -49,14 +49,14 @@ func main() {
 	// crex24Keys()
 	binanceKeys()
 
+	LoadAssetsFromDB()
+	LoadOrdersFromDB()
+	LoadMarketsFromDB()
+
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/api/v1/kline", restHandlerKline).Methods("GET")
 	muxRouter.HandleFunc("/api/v1/analysis", restHandlerAnalysis).Methods("GET")
 	muxRouter.HandleFunc("/api/v1/opportunity", restHandlerOpportunity).Methods("GET")
-
-	LoadAssetsFromDB()
-	LoadOrdersFromDB()
-	LoadMarketsFromDB()
 
 	wsHandlerAssetBroadcast()
 	muxRouter.HandleFunc("/websocket/assets", wsHandlerAssets)
