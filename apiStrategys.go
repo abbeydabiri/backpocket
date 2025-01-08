@@ -101,7 +101,7 @@ func apiStrategyStopLossTakeProfit() {
 				pairexchange := fmt.Sprintf("%s-%s", orderbookPair, orderbookExchange)
 				title := fmt.Sprintf("*%s Exchange", strings.ToTitle(orderbookExchange))
 				message = fmt.Sprintf("%s '%s' @ %v | Takeprofit @ %v | Stoploss @ %v",
-					opportunityFound, orderbookPair, price, opportunity.Takeprofit, opportunity.Stoploss)
+					message, orderbookPair, price, opportunity.Takeprofit, opportunity.Stoploss)
 
 				opportunityMutex.Lock()
 				if !strings.Contains(opportunityMap[pairexchange].Message, opportunity.Action) {
