@@ -119,10 +119,6 @@ func binanceGetExistingMarkets(wg *sync.WaitGroup) {
 			}
 
 			if market.ID == 0 {
-				if !lFirstRun {
-					log.Printf("Market is Missing ID after First Run: %+v /n", market)
-				}
-
 				market.ID = models.TableID()
 				market.Createdate = time.Now()
 				market.Updatedate = time.Now()
