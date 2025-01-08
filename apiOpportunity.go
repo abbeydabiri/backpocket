@@ -159,13 +159,10 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price >= retracement0618 &&
 		lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry &&
 		lowerInterval.RSI < 35 {
-
 		opportunity.Action = "BUY"
-		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*0.99, 8)
-		opportunity.Takeprofit = utils.TruncateFloat(lowerInterval.SMA50.Resistance*1.02, 8)
 	}
-	buyAnalysis := []string{}
 
+	buyAnalysis := []string{}
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("isMarketSupport : %v", isMarketSupport))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Trend != 'Bullish' : %v - %v", lowerInterval.Trend != "Bullish", lowerInterval.Trend))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("middleInterval.Trend != 'Bullish' : %v - %v", middleInterval.Trend != "Bullish", middleInterval.Trend))
@@ -199,12 +196,9 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price <= retracement0382 &&
 		lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry &&
 		lowerInterval.RSI > 65 {
-
 		opportunity.Action = "SELL"
-		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*1.01, 8)
-		opportunity.Takeprofit = utils.TruncateFloat(lowerInterval.SMA50.Support*0.98, 8)
-
 	}
+
 	sellAnalysis := []string{}
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("isMarketResistance : %v", isMarketResistance))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Trend != 'Bearish' : %v - %v", lowerInterval.Trend != "Bearish", lowerInterval.Trend))
@@ -227,6 +221,23 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	opportunity.Analysis = map[string]interface{}{
 		"Buy":  buyAnalysis,
 		"Sell": sellAnalysis,
+	}
+
+	if opportunity.Action == "BUY" && strings.Contains(analysis.Trend, "Bearish") {
+		opportunity.Action = "SELL"
+	}
+
+	if opportunity.Action == "SELL" && strings.Contains(analysis.Trend, "Bullish") {
+		opportunity.Action = "BUY"
+	}
+
+	switch opportunity.Action {
+	case "BUY":
+		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*0.99, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*1.03, 8)
+	case "SELL":
+		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*1.01, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*0.97, 8)
 	}
 
 	if market.Closed == 1 {
