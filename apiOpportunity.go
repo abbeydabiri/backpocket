@@ -5,7 +5,6 @@ import (
 	"backpocket/utils"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,14 +12,15 @@ import (
 
 var (
 	TimeframeMaps = map[string][]string{
-		"1m":  []string{"1m", "5m", "15m"},
-		"5m":  []string{"5m", "15m", "30m"},
-		"15m": []string{"15m", "30m", "1h"},
-		"30m": []string{"30m", "1h", "4h"},
-		"1h":  []string{"1h", "4h", "6h"},
-		"4h":  []string{"4h", "6h", "12h"},
-		"6h":  []string{"6h", "12h", "1d"},
-		"12h": []string{"12h", "1d", "3d"},
+		"1m": []string{"1m", "15m", "1h"},
+		// "1m": []string{"1m", "5m", "15m"},
+		// "5m":  []string{"5m", "15m", "30m"},
+		// "15m": []string{"15m", "30m", "1h"},
+		// "30m": []string{"30m", "1h", "4h"},
+		// "1h":  []string{"1h", "4h", "6h"},
+		// "4h":  []string{"4h", "6h", "12h"},
+		// "6h":  []string{"6h", "12h", "1d"},
+		// "12h": []string{"12h", "1d", "3d"},
 	}
 )
 
@@ -75,25 +75,16 @@ func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Req
 	pair := query.Get("pair")
 	action := query.Get("action")
 	exchange := query.Get("exchange")
-	timeframe := query.Get("intervals")
+	timeframe := query.Get("timeframe")
 
 	starttime := query.Get("starttime")
 	endtime := query.Get("endtime")
-
-	if exchange == "" {
-		exchange = "binance"
-	}
-
-	if pair == "" {
-		http.Error(httpRes, "Missing pair parameter", http.StatusBadRequest)
-		return
-	}
 
 	var searchText string
 	var searchParams []interface{}
 
 	if pair != "" {
-		searchText = " pair like '%?%' "
+		searchText = " pair like ? "
 		searchParams = append(searchParams, pair)
 	}
 
@@ -101,7 +92,7 @@ func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Req
 		if searchText != "" {
 			searchText += " AND "
 		}
-		searchText = " action like '%?%' "
+		searchText = " action like ? "
 		searchParams = append(searchParams, action)
 	}
 
@@ -109,7 +100,7 @@ func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Req
 		if searchText != "" {
 			searchText += " AND "
 		}
-		searchText = " exchange like '%?%' "
+		searchText = " exchange like ? "
 		searchParams = append(searchParams, exchange)
 	}
 
@@ -117,7 +108,7 @@ func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Req
 		if searchText != "" {
 			searchText += " AND "
 		}
-		searchText = " timeframe like '%?%' "
+		searchText = " timeframe like ? "
 		searchParams = append(searchParams, timeframe)
 	}
 
@@ -139,7 +130,7 @@ func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Req
 
 	orderby := "exchange, pair, timeframe, createdate desc"
 
-	filteredOrderList := []models.Opportunity{}
+	var filteredOrderList []models.Opportunity
 	if err := utils.SqlDB.Where(searchText, searchParams...).Order(orderby).Find(&filteredOrderList).Error; err != nil {
 		http.Error(httpRes, err.Error(), http.StatusInternalServerError)
 	}
@@ -316,23 +307,6 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	opportunity.Analysis = map[string]interface{}{
 		"Buy":  buyAnalysis,
 		"Sell": sellAnalysis,
-	}
-
-	if opportunity.Action != "" {
-		//create opportunity record
-		opportunityModel := models.Opportunity{
-			Pair:       opportunity.Pair,
-			Action:     opportunity.Action,
-			Price:      opportunity.Price,
-			Timeframe:  opportunity.Timeframe,
-			Exchange:   opportunity.Exchange,
-			Stoploss:   opportunity.Stoploss,
-			Takeprofit: opportunity.Takeprofit,
-			Analysis:   opportunity.Analysis,
-		}
-		if err := utils.SqlDB.Create(&opportunityModel).Error; err != nil {
-			log.Println(err.Error())
-		}
 	}
 
 	if market.Closed == 1 {

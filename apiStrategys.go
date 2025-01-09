@@ -121,6 +121,21 @@ func apiStrategyStopLossTakeProfit() {
 						Title: title, Message: message,
 					}
 					wsBroadcastNotification <- opportunityMap[pairexchange]
+
+					//create opportunity record
+					opportunityModel := models.Opportunity{
+						Pair:       opportunity.Pair,
+						Action:     opportunity.Action,
+						Price:      opportunity.Price,
+						Timeframe:  opportunity.Timeframe,
+						Exchange:   opportunity.Exchange,
+						Stoploss:   opportunity.Stoploss,
+						Takeprofit: opportunity.Takeprofit,
+						Analysis:   opportunity.Analysis,
+					}
+					if err := utils.SqlDB.Create(&opportunityModel).Error; err != nil {
+						log.Println(err.Error())
+					}
 				}
 				opportunityMutex.Unlock()
 			}()

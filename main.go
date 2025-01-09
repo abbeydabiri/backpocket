@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"syscall"
 	"time"
 
@@ -49,9 +48,9 @@ func main() {
 	// crex24Keys()
 	binanceKeys()
 
-	LoadAssetsFromDB()
-	LoadOrdersFromDB()
-	LoadMarketsFromDB()
+	// LoadAssetsFromDB()
+	// LoadOrdersFromDB()
+	// LoadMarketsFromDB()
 
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/api/v1/kline", restHandlerKline).Methods("GET")
@@ -59,44 +58,44 @@ func main() {
 	muxRouter.HandleFunc("/api/v1/opportunity", restHandlerOpportunity).Methods("GET")
 	muxRouter.HandleFunc("/api/v1/opportunity/search", restHandlerSearchOpportunity).Methods("GET")
 
-	wsHandlerAssetBroadcast()
-	muxRouter.HandleFunc("/websocket/assets", wsHandlerAssets)
+	// wsHandlerAssetBroadcast()
+	// muxRouter.HandleFunc("/websocket/assets", wsHandlerAssets)
 
-	wsHandlerNotificationBroadcast()
-	muxRouter.HandleFunc("/websocket/notifications", wsHandlerNotifications)
+	// wsHandlerNotificationBroadcast()
+	// muxRouter.HandleFunc("/websocket/notifications", wsHandlerNotifications)
 
-	wsHandlerOrderBroadcast()
-	muxRouter.HandleFunc("/websocket/orders", wsHandlerOrders)
-	muxRouter.HandleFunc("/websocket/orderhistory", wsHandlerOrderHistory)
+	// wsHandlerOrderBroadcast()
+	// muxRouter.HandleFunc("/websocket/orders", wsHandlerOrders)
+	// muxRouter.HandleFunc("/websocket/orderhistory", wsHandlerOrderHistory)
 
-	wsHandlerTradeBroadcast()
-	muxRouter.HandleFunc("/websocket/trades", wsHandlerTrades)
+	// wsHandlerTradeBroadcast()
+	// muxRouter.HandleFunc("/websocket/trades", wsHandlerTrades)
 
-	wsHandlerMarketBroadcast()
-	muxRouter.HandleFunc("/websocket/markets", wsHandlerMarkets)
+	// wsHandlerMarketBroadcast()
+	// muxRouter.HandleFunc("/websocket/markets", wsHandlerMarkets)
 
-	wsHandlerOrderbookBroadcast()
-	muxRouter.HandleFunc("/websocket/orderbooks", wsHandlerOrderbooks)
+	// wsHandlerOrderbookBroadcast()
+	// muxRouter.HandleFunc("/websocket/orderbooks", wsHandlerOrderbooks)
 
-	wsHandlerAnalysisBroadcast()
-	muxRouter.HandleFunc("/websocket/analysis", wsHandlerAnalysis)
+	// wsHandlerAnalysisBroadcast()
+	// muxRouter.HandleFunc("/websocket/analysis", wsHandlerAnalysis)
 
-	// run our strategy process
-	go apiStrategyStopLossTakeProfit()
+	// // run our strategy process
+	// go apiStrategyStopLossTakeProfit()
 
-	go binanceAssetGet()
-	wg := sync.WaitGroup{}
+	// go binanceAssetGet()
+	// wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go binanceGetExistingMarkets(&wg)
-	wg.Wait()
-	go binanceAssetStream()
-	go GoFetchEnabledMarketsAnalysis()
+	// wg.Add(1)
+	// go binanceGetExistingMarkets(&wg)
+	// wg.Wait()
+	// go binanceAssetStream()
+	// go GoFetchEnabledMarketsAnalysis()
 
-	// // go binanceTradeStream() //disabled due to not being needed and data overflooding and high cpu usage
-	go binanceOrderBookStream()
-	go binanceMarket24hrTicker()
-	go binanceMarketOHLCVStream()
+	// // // go binanceTradeStream() //disabled due to not being needed and data overflooding and high cpu usage
+	// go binanceOrderBookStream()
+	// go binanceMarket24hrTicker()
+	// go binanceMarketOHLCVStream()
 
 	//
 
