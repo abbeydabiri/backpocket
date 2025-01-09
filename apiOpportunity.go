@@ -1,9 +1,11 @@
 package main
 
 import (
+	"backpocket/models"
 	"backpocket/utils"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -60,6 +62,90 @@ func restHandlerOpportunity(httpRes http.ResponseWriter, httpReq *http.Request) 
 
 	httpRes.Header().Set("Content-Type", "application/json")
 	jsonResponse, err := json.Marshal(opportunity)
+	if err != nil {
+		http.Error(httpRes, "Error converting to JSON", http.StatusInternalServerError)
+		return
+	}
+
+	httpRes.Write(jsonResponse)
+}
+func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Request) {
+	query := httpReq.URL.Query()
+
+	pair := query.Get("pair")
+	action := query.Get("action")
+	exchange := query.Get("exchange")
+	timeframe := query.Get("intervals")
+
+	starttime := query.Get("starttime")
+	endtime := query.Get("endtime")
+
+	if exchange == "" {
+		exchange = "binance"
+	}
+
+	if pair == "" {
+		http.Error(httpRes, "Missing pair parameter", http.StatusBadRequest)
+		return
+	}
+
+	var searchText string
+	var searchParams []interface{}
+
+	if pair != "" {
+		searchText = " pair like '%?%' "
+		searchParams = append(searchParams, pair)
+	}
+
+	if action != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText = " action like '%?%' "
+		searchParams = append(searchParams, action)
+	}
+
+	if exchange != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText = " exchange like '%?%' "
+		searchParams = append(searchParams, exchange)
+	}
+
+	if timeframe != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText = " timeframe like '%?%' "
+		searchParams = append(searchParams, timeframe)
+	}
+
+	if starttime != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " createdate >= ?::timestamp "
+		searchParams = append(searchParams, starttime)
+	}
+
+	if endtime != "" {
+		if searchText != "" {
+			searchText += " AND "
+		}
+		searchText += " createdate <= ?::timestamp "
+		searchParams = append(searchParams, endtime)
+	}
+
+	orderby := "exchange, pair, timeframe, createdate desc"
+
+	filteredOrderList := []models.Opportunity{}
+	if err := utils.SqlDB.Where(searchText, searchParams...).Order(orderby).Find(&filteredOrderList).Error; err != nil {
+		http.Error(httpRes, err.Error(), http.StatusInternalServerError)
+	}
+
+	httpRes.Header().Set("Content-Type", "application/json")
+	jsonResponse, err := json.Marshal(filteredOrderList)
 	if err != nil {
 		http.Error(httpRes, "Error converting to JSON", http.StatusInternalServerError)
 		return
@@ -230,6 +316,23 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	opportunity.Analysis = map[string]interface{}{
 		"Buy":  buyAnalysis,
 		"Sell": sellAnalysis,
+	}
+
+	if opportunity.Action != "" {
+		//create opportunity record
+		opportunityModel := models.Opportunity{
+			Pair:       opportunity.Pair,
+			Action:     opportunity.Action,
+			Price:      opportunity.Price,
+			Timeframe:  opportunity.Timeframe,
+			Exchange:   opportunity.Exchange,
+			Stoploss:   opportunity.Stoploss,
+			Takeprofit: opportunity.Takeprofit,
+			Analysis:   opportunity.Analysis,
+		}
+		if err := utils.SqlDB.Create(&opportunityModel).Error; err != nil {
+			log.Println(err.Error())
+		}
 	}
 
 	if market.Closed == 1 {
