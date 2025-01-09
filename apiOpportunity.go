@@ -297,11 +297,11 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	switch opportunity.Action {
 	case "BUY":
-		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*0.99, 8)
-		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*1.03, 8)
+		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*0.997, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*1.023, 8)
 	case "SELL":
-		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*1.01, 8)
-		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*0.97, 8)
+		opportunity.Stoploss = utils.TruncateFloat(opportunity.Price*1.003, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(opportunity.Price*0.977, 8)
 	}
 
 	opportunity.Analysis = map[string]interface{}{
