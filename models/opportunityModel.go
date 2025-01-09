@@ -1,6 +1,8 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"errors"
 
 	"gorm.io/gorm"
@@ -18,7 +20,22 @@ type Opportunity struct {
 	Stoploss   float64 `json:"Stoploss" gorm:"index;"`
 	Takeprofit float64 `json:"Takeprofit" gorm:"index;"`
 
-	Analysis map[string]interface{} `json:"Analysis" gorm:"type:jsonb;"`
+	Analysis JSONB `json:"Analysis" gorm:"type:jsonb;"`
+}
+
+type JSONB map[string]interface{}
+
+func (j *JSONB) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(bytes, j)
+}
+
+func (j JSONB) Value() (driver.Value, error) {
+	return json.Marshal(j)
 }
 
 func (model *Opportunity) BeforeCreate(tx *gorm.DB) error {
