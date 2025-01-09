@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultTimeframe = "1m"
+	DefaultTimeframe = "30m"
 )
 
 var (
@@ -115,7 +115,7 @@ func apiStrategyStopLossTakeProfit() {
 					price, opportunity.Takeprofit, opportunity.Stoploss)
 
 				opportunityMutex.Lock()
-				if !strings.Contains(opportunityMap[pairexchange].Message, opportunityFound) {
+				if !strings.Contains(opportunityMap[pairexchange].Title, opportunityFound) {
 					log.Printf("Opportunity: %s | %s \n", title, message)
 					opportunityMap[pairexchange] = notifications{
 						Title: title, Message: message,
