@@ -10,7 +10,7 @@ import (
 
 type Opportunity struct {
 	Base
-
+	Trend     string `json:"Trend" gorm:"index;"`
 	Pair      string `json:"Pair" gorm:"index;not null"`
 	Action    string `json:"Action" gorm:"index;"`
 	Timeframe string `json:"Timeframe" gorm:"index;not null"`
