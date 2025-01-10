@@ -12,15 +12,14 @@ import (
 
 var (
 	TimeframeMaps = map[string][]string{
-		"1m": []string{"1m", "15m", "1h"},
-		// "1m": []string{"1m", "5m", "15m"},
-		// "5m":  []string{"5m", "15m", "30m"},
-		// "15m": []string{"15m", "30m", "1h"},
-		// "30m": []string{"30m", "1h", "4h"},
-		// "1h":  []string{"1h", "4h", "6h"},
-		// "4h":  []string{"4h", "6h", "12h"},
-		// "6h":  []string{"6h", "12h", "1d"},
-		// "12h": []string{"12h", "1d", "3d"},
+		"1m":  []string{"1m", "5m", "15m"},
+		"5m":  []string{"5m", "15m", "30m"},
+		"15m": []string{"15m", "30m", "1h"},
+		"30m": []string{"30m", "1h", "4h"},
+		"1h":  []string{"1h", "4h", "6h"},
+		"4h":  []string{"4h", "6h", "12h"},
+		"6h":  []string{"6h", "12h", "1d"},
+		"12h": []string{"12h", "1d", "3d"},
 	}
 )
 
@@ -128,7 +127,7 @@ func restHandlerSearchOpportunity(httpRes http.ResponseWriter, httpReq *http.Req
 		searchParams = append(searchParams, endtime)
 	}
 
-	orderby := "exchange, pair, timeframe, createdate desc"
+	orderby := "createdate desc"
 
 	var filteredOrderList []models.Opportunity
 	if err := utils.SqlDB.Where(searchText, searchParams...).Order(orderby).Find(&filteredOrderList).Error; err != nil {
@@ -193,9 +192,9 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	retracement0618 := lowerInterval.RetracementLevels["0.618"]
 	retracement0382 := lowerInterval.RetracementLevels["0.382"]
 
-	isAllMarketSupport := (lowerInterval.SMA10.Support == lowerInterval.SMA50.Support &&
-		middleInterval.SMA10.Support == middleInterval.SMA50.Support &&
-		higherInterval.SMA10.Support == higherInterval.SMA50.Support)
+	isAllMarketSupport := (lowerInterval.SMA10.Support ==
+		lowerInterval.SMA50.Support &&
+		lowerInterval.SMA20.Support == middleInterval.SMA10.Support)
 
 	isSameMarketSupport := (lowerInterval.SMA20.Support == lowerInterval.SMA50.Support &&
 		middleInterval.SMA20.Support == middleInterval.SMA50.Support &&
@@ -208,9 +207,9 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		isMarketSupport = true
 	}
 
-	isAllMarketResistance := (lowerInterval.SMA10.Resistance == lowerInterval.SMA50.Resistance &&
-		middleInterval.SMA10.Resistance == middleInterval.SMA50.Resistance &&
-		higherInterval.SMA10.Resistance == higherInterval.SMA50.Resistance)
+	isAllMarketResistance := (lowerInterval.SMA10.Resistance ==
+		lowerInterval.SMA50.Resistance &&
+		lowerInterval.SMA20.Resistance == middleInterval.SMA10.Resistance)
 
 	isSameMarketResistance := (lowerInterval.SMA20.Resistance == lowerInterval.SMA50.Resistance &&
 		middleInterval.SMA20.Resistance == middleInterval.SMA50.Resistance &&
@@ -235,7 +234,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price > lowerInterval.Candle.Open &&
 		opportunity.Price >= retracement0618 &&
 		lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry &&
-		lowerInterval.RSI < 35 {
+		lowerInterval.RSI < 50 {
 		opportunity.Action = "BUY"
 	}
 
@@ -256,7 +255,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("opportunity.Price >= retracement0618 : %v | %v - %v", opportunity.Price >= retracement0618, opportunity.Price, retracement0618))
 
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry:  %v | %v - %v", lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry, lowerInterval.Candle.Open, lowerInterval.SMA20.Entry))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.RSI %v < 35 : %v", lowerInterval.RSI, lowerInterval.RSI < 35))
+	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.RSI %v < 50 : %v", lowerInterval.RSI, lowerInterval.RSI < 50))
 
 	// -- -- --
 
@@ -272,7 +271,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		opportunity.Price < lowerInterval.Candle.Open &&
 		opportunity.Price <= retracement0382 &&
 		lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry &&
-		lowerInterval.RSI > 65 {
+		lowerInterval.RSI > 50 {
 		opportunity.Action = "SELL"
 	}
 
@@ -293,7 +292,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("opportunity.Price <= retracement0382 : %v | %v - %v", opportunity.Price <= retracement0382, opportunity.Price, retracement0382))
 
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry : %v | %v - %v", lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry, lowerInterval.Candle.Open, lowerInterval.SMA20.Entry))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.RSI %v > 65 : %v", lowerInterval.RSI, lowerInterval.RSI > 65))
+	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.RSI %v > 50 : %v", lowerInterval.RSI, lowerInterval.RSI > 50))
 
 	switch opportunity.Action {
 	case "BUY":
