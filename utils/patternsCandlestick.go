@@ -174,7 +174,9 @@ func isBullishThreeWhiteSoldiers(last3 []Candle) bool {
 		last3[1].Close > last3[1].Open &&
 		last3[2].Close > last3[2].Open &&
 		last3[1].Open < last3[0].Close &&
-		last3[2].Open < last3[1].Close
+		last3[2].Open < last3[1].Close &&
+		last3[1].Close > last3[0].High &&
+		last3[2].Close > last3[1].High
 }
 
 // Bullish Deliberation: Two rising tall green candles, with partial overlap and each close near the high, followed by a small green candle that opens near the preceding close.
@@ -190,23 +192,23 @@ func isBullishDeliberation(last3 []Candle) bool {
 
 // Bearish Identical Three Crows: Three identical falling red candles with no overlap (between the bodies) and each close near the low.
 func isBearishIdenticalThreeCrows(last3 []Candle) bool {
-	return last3[0].Close < last3[0].Open &&
+	return len(last3) == 3 && last3[0].Close < last3[0].Open &&
 		last3[1].Close < last3[1].Open &&
 		last3[2].Close < last3[2].Open &&
-		last3[0].Close < last3[1].Open &&
-		last3[1].Close < last3[2].Open &&
-		math.Abs(last3[0].Close-last3[0].Low) <= calculatePrecision(last3[0].Open, last3[0].High, last3[0].Low, last3[0].Close) &&
-		math.Abs(last3[1].Close-last3[1].Low) <= calculatePrecision(last3[1].Open, last3[1].High, last3[1].Low, last3[1].Close) &&
-		math.Abs(last3[2].Close-last3[2].Low) <= calculatePrecision(last3[2].Open, last3[2].High, last3[2].Low, last3[2].Close)
+		last3[1].High > last3[0].Low &&
+		last3[2].High > last3[1].Low
 }
 
 // Three Black Crows: Each candlestick opens within the body of the preceding candlestick and closes beyond its low price
 func isBearishThreeBlackCrows(last3 []Candle) bool {
-	return last3[0].Close < last3[0].Open &&
+	return len(last3) == 3 &&
+		last3[0].Close < last3[0].Open &&
 		last3[1].Close < last3[1].Open &&
 		last3[2].Close < last3[2].Open &&
-		last3[1].Open < last3[0].Close &&
-		last3[2].Open < last3[1].Close
+		last3[1].Open > last3[0].Close &&
+		last3[2].Open > last3[1].Close &&
+		last3[1].Close < last3[0].Low &&
+		last3[2].Close < last3[1].Low
 }
 
 // Morning Star: Three candle pattern, first bearish, second small-bodied, third bullish

@@ -182,24 +182,24 @@ func identifyCandlestickPattern(candles []Candle) string {
 		return "Bullish: Three White Soldiers"
 	}
 
-	// Bearish Identical Three Crows
-	if isBearishIdenticalThreeCrows(candles[len(candles)-3:]) {
-		return "Bearish: Identical Three Crows"
-	}
-
 	// Bearish Three Black Crows
 	if isBearishThreeBlackCrows(candles[len(candles)-3:]) {
 		return "Bearish: Three Black Crows"
 	}
 
-	// Bullish Morning Star
-	if isBullishMorningStar(candles[len(candles)-3:]) {
-		return "Bullish: Morning Star"
+	// Bearish Identical Three Crows
+	if isBearishIdenticalThreeCrows(candles[len(candles)-3:]) {
+		return "Bearish: Identical Three Crows"
 	}
 
 	// Bearish Evening Star
 	if isBearishEveningStar(candles[len(candles)-3:]) {
 		return "Bearish: Evening Star"
+	}
+
+	// Bullish Morning Star
+	if isBullishMorningStar(candles[len(candles)-3:]) {
+		return "Bullish: Morning Star"
 	}
 
 	// - two candle stick patterns - //
@@ -294,7 +294,7 @@ func identifyCandlestickPattern(candles []Candle) string {
 }
 
 // detectChartPatterns analyzes the given price data to identify patterns
-func detectChartPatterns(prices, highs, lows []float64) string {
+func detectChartPatterns(prices, highs, lows, opens []float64) string {
 
 	// Reversal Patterns
 	if isVPattern(prices) {
@@ -302,12 +302,6 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 	}
 	if isInvertedVPattern(prices) {
 		return "Bearish: V Pattern"
-	}
-	if isRisingWedge(highs, lows) {
-		return "Bearish: Rising Wedge"
-	}
-	if isFallingWedge(highs, lows) {
-		return "Bullish: Falling Wedge"
 	}
 
 	if isHeadAndShoulders(prices) {
@@ -321,6 +315,21 @@ func detectChartPatterns(prices, highs, lows []float64) string {
 	}
 	if isDoubleBottom(prices) {
 		return "Bullish: Double Bottom"
+	}
+
+	if isFallingKnife(opens, prices, 3, 3) {
+		return "Bearish: Falling Knife"
+	}
+
+	if isRisingKnife(opens, prices, 3, 3) {
+		return "Bullish: Rising Knife"
+	}
+
+	if isRisingWedge(highs, lows) {
+		return "Bearish: Rising Wedge"
+	}
+	if isFallingWedge(highs, lows) {
+		return "Bullish: Falling Wedge"
 	}
 
 	// Continuation Patterns
@@ -481,12 +490,12 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	chartPattern := ""
 	candlePattern := ""
 
-	if len(data.Close) >= period10 {
+	if len(data.Close) >= period20 {
 		candleArray := []Candle{}
-		lastClose := data.Close[len(data.Close)-period10:]
-		lastOpen := data.Open[len(data.Open)-period10:]
-		lastHigh := data.High[len(data.High)-period10:]
-		lastLow := data.Low[len(data.Low)-period10:]
+		lastClose := data.Close[len(data.Close)-period20:]
+		lastOpen := data.Open[len(data.Open)-period20:]
+		lastHigh := data.High[len(data.High)-period20:]
+		lastLow := data.Low[len(data.Low)-period20:]
 
 		for i := 0; i < len(lastClose); i++ {
 			candleArray = append(candleArray, Candle{
@@ -496,8 +505,14 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 				Low:   lastLow[i],
 			})
 		}
-		chartPattern = detectChartPatterns(lastClose, lastHigh, lastLow)
+		chartPattern = detectChartPatterns(lastClose, lastHigh, lastLow, lastOpen)
+		if chartPattern == "?" {
+			chartPattern = detectChartPatterns(lastClose[:len(lastClose)-1], lastHigh[:len(lastHigh)-1], lastLow[:len(lastLow)-1], lastOpen[:len(lastOpen)-1])
+		}
 		candlePattern = identifyCandlestickPattern(candleArray)
+		if candlePattern == "?" {
+			candlePattern = identifyCandlestickPattern(candleArray[:len(candleArray)-1])
+		}
 	}
 
 	var currentCandle, prevCandle Candle
