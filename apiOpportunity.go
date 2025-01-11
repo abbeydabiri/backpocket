@@ -223,7 +223,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	}
 
 	//Check for Long // Buy Opportunity
-	if isMarketSupport && lowerInterval.Trend == "Bearish" &&
+	if isMarketSupport && lowerInterval.Trend != "Bullish" &&
 		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
 
 		(strings.Contains(lowerInterval.Pattern.Candle, "Bullish") ||
@@ -242,7 +242,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	buyAnalysis := []string{}
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("isMarketSupport : %v", isMarketSupport))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Trend == 'Bearish' : %v - %v", lowerInterval.Trend == "Bearish", lowerInterval.Trend))
+	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Trend != 'Bullish' : %v - %v", lowerInterval.Trend != "Bullish", lowerInterval.Trend))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("showsReversalPatterns(Bullish, lowerInterval.Pattern) : %v - %v",
 		showsReversalPatterns("Bullish", lowerInterval.Pattern), lowerInterval.Pattern.Chart))
 
@@ -260,7 +260,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	// -- -- --
 
 	//Check for Short // Sell Opportunity
-	if isMarketResistance && lowerInterval.Trend == "Bullish" &&
+	if isMarketResistance && lowerInterval.Trend != "Bearish" &&
 		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
 
 		(strings.Contains(lowerInterval.Pattern.Candle, "Bearish") ||
@@ -279,7 +279,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	sellAnalysis := []string{}
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("isMarketResistance : %v", isMarketResistance))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Trend == 'Bullish' : %v - %v", lowerInterval.Trend == "Bullish", lowerInterval.Trend))
+	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Trend != 'Bearish' : %v - %v", lowerInterval.Trend != "Bearish", lowerInterval.Trend))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("showsReversalPatterns(Bearish, lowerInterval.Pattern) : %v - %v",
 		showsReversalPatterns("Bearish", lowerInterval.Pattern), lowerInterval.Pattern.Chart))
 
