@@ -1,6 +1,8 @@
 package utils
 
-import "math"
+import (
+	"math"
+)
 
 type PatternMatch struct {
 	Pattern string
@@ -126,7 +128,7 @@ func isDoubleBottom(prices []float64) bool {
 
 // Rising Wedge (Bearish Reversal)
 func isRisingWedge(highs, lows []float64) bool {
-	n := 7
+	n := 10
 	if len(highs) < n || len(lows) < n {
 		return false
 	}
@@ -139,7 +141,7 @@ func isRisingWedge(highs, lows []float64) bool {
 
 // Falling Wedge (Bullish Reversal)
 func isFallingWedge(highs, lows []float64) bool {
-	n := 7
+	n := 10
 	if len(highs) < n || len(lows) < n {
 		return false
 	}
@@ -148,6 +150,60 @@ func isFallingWedge(highs, lows []float64) bool {
 
 	lenght := len(highs) - 1
 	return slope(0, highs[0], float64(lenght), highs[lenght]) > slope(0, lows[0], float64(lenght), lows[lenght])
+}
+
+// isFallingKnife checks if the last `n` candles form a falling knife pattern
+func isFallingKnife(opens, closes []float64, n int, dropPercentage float64) bool {
+	if len(opens) < n {
+		return false
+	}
+
+	totalDrop := 0.0
+	consecutiveBearish := 0
+
+	// Analyze the last `n` candles
+	for i := len(opens) - n; i < len(opens); i++ {
+		if closes[i] < opens[i] { // Bearish candle
+			consecutiveBearish++
+			totalDrop += math.Abs(opens[i] - closes[i])
+		} else {
+			// If any candle is not bearish, break the pattern
+			return false
+		}
+	}
+
+	// Calculate the percentage drop relative to the first candle's open price
+	initialPrice := opens[len(opens)-n]
+	dropPercentageCalculated := (totalDrop / initialPrice) * 100
+
+	return consecutiveBearish == n && dropPercentageCalculated >= dropPercentage
+}
+
+// isRisingKnife checks if the last `n` candles form a falling knife pattern
+func isRisingKnife(opens, closes []float64, n int, risePercentage float64) bool {
+	if len(opens) < n {
+		return false
+	}
+
+	totalRise := 0.0
+	consecutiveBullish := 0
+
+	// Analyze the last `n` candles
+	for i := len(opens) - n; i < len(opens); i++ {
+		if closes[i] > opens[i] { // Bullish candle
+			consecutiveBullish++
+			totalRise += closes[i] - opens[i]
+		} else {
+			// If any candle is not bullish, break the pattern
+			return false
+		}
+	}
+
+	// Calculate the percentage rise relative to the first candle's open price
+	initialPrice := opens[len(opens)-n]
+	risePercentageCalculated := (totalRise / initialPrice) * 100
+
+	return consecutiveBullish == n && risePercentageCalculated >= risePercentage
 }
 
 // 2. Continuation Patterns

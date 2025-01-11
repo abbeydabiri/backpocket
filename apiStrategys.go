@@ -77,25 +77,13 @@ func apiStrategyStopLossTakeProfit() {
 		analysis := getAnalysis(orderbookPair, orderbookExchange)
 		opportunity := analyseOpportunity(analysis, "5m", 0)
 
-		if opportunity.Action == "BUY" {
-			if buyPercentDifference < float64(3) {
-				opportunity.Action = ""
-			}
-		}
-
-		if opportunity.Action == "SELL" {
-			if sellPercentDifference < float64(3) {
-				opportunity.Action = ""
-			}
-		}
-		opportunityFound := opportunity.Action
-		if opportunityFound != "" {
+		if opportunity.Action != "" {
 			go func() {
 
 				var price float64
 				title := ""
 				message := ""
-				switch opportunityFound {
+				switch opportunity.Action {
 				case "BUY":
 					price = orderbookAskPrice
 					title = "BUY *" + orderbookPair + "*"
@@ -115,7 +103,7 @@ func apiStrategyStopLossTakeProfit() {
 					price, opportunity.Takeprofit, opportunity.Stoploss)
 
 				opportunityMutex.Lock()
-				if !strings.Contains(opportunityMap[pairexchange].Title, opportunityFound) {
+				if !strings.Contains(opportunityMap[pairexchange].Title, opportunity.Action) {
 					log.Printf("Opportunity: %s | %s \n", title, message)
 					opportunityMap[pairexchange] = notifications{
 						Title: title, Message: message,
@@ -141,6 +129,20 @@ func apiStrategyStopLossTakeProfit() {
 				opportunityMutex.Unlock()
 			}()
 		}
+
+		if opportunity.Action == "BUY" {
+			if buyPercentDifference < float64(3) || strings.Contains(analysis.Trend, "Bearish") {
+				opportunity.Action = ""
+			}
+		}
+
+		if opportunity.Action == "SELL" {
+			if sellPercentDifference < float64(3) || strings.Contains(analysis.Trend, "Bullish") {
+				opportunity.Action = ""
+			}
+		}
+
+		opportunityFound := opportunity.Action
 
 		//do a mutex RLock loop through orders
 		orderListMutex.RLock()

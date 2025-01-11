@@ -198,7 +198,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	isSameMarketSupport := (lowerInterval.SMA20.Support == lowerInterval.SMA50.Support &&
 		middleInterval.SMA20.Support == middleInterval.SMA50.Support &&
-		higherInterval.SMA20.Support == higherInterval.SMA50.Support)
+		higherInterval.SMA10.Support == higherInterval.SMA20.Support)
 
 	isLowerMiddleSupport := (lowerInterval.SMA20.Support == middleInterval.SMA20.Support)
 
@@ -223,14 +223,14 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	}
 
 	//Check for Long // Buy Opportunity
-	if isMarketSupport && lowerInterval.Trend != "Bullish" &&
-		(middleInterval.Trend != "Bullish" && higherInterval.Trend != "Bullish") &&
-		((showsReversalPatterns("Bullish", lowerInterval.Pattern) && showsReversalPatterns("Bullish", middleInterval.Pattern)) ||
-			(showsReversalPatterns("Bullish", lowerInterval.Pattern) && showsReversalPatterns("Bullish", higherInterval.Pattern)) ||
-			(showsReversalPatterns("Bullish", middleInterval.Pattern) && showsReversalPatterns("Bullish", higherInterval.Pattern)) ||
-			(strings.Contains(middleInterval.Pattern.Candle, "Bullish") || strings.Contains(higherInterval.Pattern.Candle, "Bullish"))) &&
+	if isMarketSupport && lowerInterval.Trend == "Bearish" &&
+		showsReversalPatterns("Bullish", lowerInterval.Pattern) &&
 
-		opportunity.Price <= middleInterval.BollingerBands["middle"] &&
+		(strings.Contains(lowerInterval.Pattern.Candle, "Bullish") ||
+			strings.Contains(middleInterval.Pattern.Candle, "Bullish") ||
+			strings.Contains(higherInterval.Pattern.Candle, "Bullish")) &&
+
+		opportunity.Price <= lowerInterval.BollingerBands["middle"] &&
 		opportunity.Price > lowerInterval.Candle.Open &&
 		opportunity.Price >= retracement0618 &&
 		lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry &&
@@ -240,34 +240,32 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	buyAnalysis := []string{}
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("isMarketSupport : %v", isMarketSupport))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Trend != 'Bullish' : %v - %v", lowerInterval.Trend != "Bullish", lowerInterval.Trend))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("middleInterval.Trend != 'Bullish' : %v - %v", middleInterval.Trend != "Bullish", middleInterval.Trend))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("higherInterval.Trend != 'Bullish' : %v - %v", higherInterval.Trend != "Bullish", higherInterval.Trend))
+	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Trend == 'Bearish' : %v - %v", lowerInterval.Trend == "Bearish", lowerInterval.Trend))
+	buyAnalysis = append(buyAnalysis, fmt.Sprintf("showsReversalPatterns(Bullish, lowerInterval.Pattern) : %v - %v",
+		showsReversalPatterns("Bullish", lowerInterval.Pattern), lowerInterval.Pattern.Chart))
+
+	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Pattern.Candle' : %v", lowerInterval.Pattern.Candle))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("middleInterval.Pattern.Candle' : %v", middleInterval.Pattern.Candle))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("higherInterval.Pattern.Candle' : %v", higherInterval.Pattern.Candle))
 
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("showsReversalPatterns(Bullish, lowerInterval.Pattern) : %v = %v", showsReversalPatterns("Bullish", lowerInterval.Pattern), lowerInterval.Pattern.Chart))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("showsReversalPatterns(Bullish, middleInterval.Pattern) : %v = %v", showsReversalPatterns("Bullish", middleInterval.Pattern), middleInterval.Pattern.Chart))
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("showsReversalPatterns(Bullish, higherInterval.Pattern) : %v = %v", showsReversalPatterns("Bullish", higherInterval.Pattern), higherInterval.Pattern.Chart))
-
-	buyAnalysis = append(buyAnalysis, fmt.Sprintf("opportunity.Price <= middleInterval.BollingerBands[middle]  : %v | %v - %v", opportunity.Price <= middleInterval.BollingerBands["middle"], opportunity.Price, middleInterval.BollingerBands["middle"]))
+	buyAnalysis = append(buyAnalysis, fmt.Sprintf("opportunity.Price <= lowerInterval.BollingerBands[middle]  : %v | %v - %v", opportunity.Price <= lowerInterval.BollingerBands["middle"], opportunity.Price, middleInterval.BollingerBands["middle"]))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("opportunity.Price > lowerInterval.Candle.Open : %v | %v - %v", opportunity.Price > lowerInterval.Candle.Open, opportunity.Price, lowerInterval.Candle.Open))
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("opportunity.Price >= retracement0618 : %v | %v - %v", opportunity.Price >= retracement0618, opportunity.Price, retracement0618))
-
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry:  %v | %v - %v", lowerInterval.Candle.Open <= lowerInterval.SMA20.Entry, lowerInterval.Candle.Open, lowerInterval.SMA20.Entry))
+
 	buyAnalysis = append(buyAnalysis, fmt.Sprintf("lowerInterval.RSI %v < 50 : %v", lowerInterval.RSI, lowerInterval.RSI < 50))
 
 	// -- -- --
 
 	//Check for Short // Sell Opportunity
-	if isMarketResistance && lowerInterval.Trend != "Bearish" &&
-		(middleInterval.Trend != "Bearish" || higherInterval.Trend != "Bearish") &&
-		((showsReversalPatterns("Bearish", lowerInterval.Pattern) && showsReversalPatterns("Bearish", middleInterval.Pattern)) ||
-			(showsReversalPatterns("Bearish", lowerInterval.Pattern) && showsReversalPatterns("Bearish", higherInterval.Pattern)) ||
-			(showsReversalPatterns("Bearish", middleInterval.Pattern) && showsReversalPatterns("Bearish", higherInterval.Pattern)) ||
-			(strings.Contains(middleInterval.Pattern.Candle, "Bearish") || strings.Contains(higherInterval.Pattern.Candle, "Bearish"))) &&
+	if isMarketResistance && lowerInterval.Trend == "Bullish" &&
+		showsReversalPatterns("Bearish", lowerInterval.Pattern) &&
 
-		opportunity.Price >= middleInterval.BollingerBands["middle"] &&
+		(strings.Contains(lowerInterval.Pattern.Candle, "Bearish") ||
+			strings.Contains(middleInterval.Pattern.Candle, "Bearish") ||
+			strings.Contains(higherInterval.Pattern.Candle, "Bearish")) &&
+
+		opportunity.Price >= lowerInterval.BollingerBands["middle"] &&
 		opportunity.Price < lowerInterval.Candle.Open &&
 		opportunity.Price <= retracement0382 &&
 		lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry &&
@@ -277,21 +275,19 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	sellAnalysis := []string{}
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("isMarketResistance : %v", isMarketResistance))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Trend != 'Bearish' : %v - %v", lowerInterval.Trend != "Bearish", lowerInterval.Trend))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("middleInterval.Trend != 'Bearish' : %v - %v", middleInterval.Trend != "Bearish", middleInterval.Trend))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("higherInterval.Trend != 'Bearish' : %v - %v", higherInterval.Trend != "Bearish", higherInterval.Trend))
+	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Trend == 'Bullish' : %v - %v", lowerInterval.Trend == "Bullish", lowerInterval.Trend))
+	sellAnalysis = append(sellAnalysis, fmt.Sprintf("showsReversalPatterns(Bearish, lowerInterval.Pattern) : %v - %v",
+		showsReversalPatterns("Bearish", lowerInterval.Pattern), lowerInterval.Pattern.Chart))
+
+	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Pattern.Candle' : %v", lowerInterval.Pattern.Candle))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("middleInterval.Pattern.Candle' : %v", middleInterval.Pattern.Candle))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("higherInterval.Pattern.Candle' : %v", higherInterval.Pattern.Candle))
 
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("showsReversalPatterns(Bearish, lowerInterval.Pattern) : %v = %v", showsReversalPatterns("Bearish", lowerInterval.Pattern), lowerInterval.Pattern.Chart))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("showsReversalPatterns(Bearish, middleInterval.Pattern) : %v = %v", showsReversalPatterns("Bearish", middleInterval.Pattern), middleInterval.Pattern.Chart))
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("showsReversalPatterns(Bearish, higherInterval.Pattern) : %v = %v", showsReversalPatterns("Bearish", higherInterval.Pattern), higherInterval.Pattern.Chart))
-
-	sellAnalysis = append(sellAnalysis, fmt.Sprintf("opportunity.Price >= middleInterval.BollingerBands[middle] :  %v | %v - %v", opportunity.Price >= middleInterval.BollingerBands["middle"], opportunity.Price, middleInterval.BollingerBands["middle"]))
+	sellAnalysis = append(sellAnalysis, fmt.Sprintf("opportunity.Price >= lowerInterval.BollingerBands[middle] :  %v | %v - %v", opportunity.Price >= lowerInterval.BollingerBands["middle"], opportunity.Price, middleInterval.BollingerBands["middle"]))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("opportunity.Price < lowerInterval.Candle.Open : %v | %v - %v", opportunity.Price < lowerInterval.Candle.Open, opportunity.Price, lowerInterval.Candle.Open))
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("opportunity.Price <= retracement0382 : %v | %v - %v", opportunity.Price <= retracement0382, opportunity.Price, retracement0382))
-
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry : %v | %v - %v", lowerInterval.Candle.Open >= lowerInterval.SMA20.Entry, lowerInterval.Candle.Open, lowerInterval.SMA20.Entry))
+
 	sellAnalysis = append(sellAnalysis, fmt.Sprintf("lowerInterval.RSI %v > 50 : %v", lowerInterval.RSI, lowerInterval.RSI > 50))
 
 	switch opportunity.Action {
