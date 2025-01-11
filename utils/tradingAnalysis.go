@@ -492,10 +492,18 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 
 	if len(data.Close) >= period20 {
 		candleArray := []Candle{}
+
 		lastClose := data.Close[len(data.Close)-period20:]
+		lastClose = lastClose[:len(lastClose)-1]
+
 		lastOpen := data.Open[len(data.Open)-period20:]
+		lastOpen = lastOpen[:len(lastOpen)-1]
+
 		lastHigh := data.High[len(data.High)-period20:]
+		lastHigh = lastHigh[:len(lastHigh)-1]
+
 		lastLow := data.Low[len(data.Low)-period20:]
+		lastLow = lastLow[:len(lastLow)-1]
 
 		for i := 0; i < len(lastClose); i++ {
 			candleArray = append(candleArray, Candle{
