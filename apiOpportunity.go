@@ -230,6 +230,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 			strings.Contains(middleInterval.Pattern.Candle, "Bullish") ||
 			strings.Contains(higherInterval.Pattern.Candle, "Bullish")) &&
 
+		lowerInterval.Candle.Close > lowerInterval.PrevCandle.Open &&
+
 		opportunity.Price <= lowerInterval.BollingerBands["middle"] &&
 		opportunity.Price > lowerInterval.Candle.Open &&
 		opportunity.Price >= retracement0618 &&
@@ -264,6 +266,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		(strings.Contains(lowerInterval.Pattern.Candle, "Bearish") ||
 			strings.Contains(middleInterval.Pattern.Candle, "Bearish") ||
 			strings.Contains(higherInterval.Pattern.Candle, "Bearish")) &&
+
+		lowerInterval.Candle.Close < lowerInterval.PrevCandle.Open &&
 
 		opportunity.Price >= lowerInterval.BollingerBands["middle"] &&
 		opportunity.Price < lowerInterval.Candle.Open &&

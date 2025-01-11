@@ -131,13 +131,13 @@ func apiStrategyStopLossTakeProfit() {
 		}
 
 		if opportunity.Action == "BUY" {
-			if buyPercentDifference < float64(3) || strings.Contains(analysis.Trend, "Bearish") {
+			if buyPercentDifference < float64(3) { // || strings.Contains(analysis.Trend, "Bearish") {
 				opportunity.Action = ""
 			}
 		}
 
 		if opportunity.Action == "SELL" {
-			if sellPercentDifference < float64(3) || strings.Contains(analysis.Trend, "Bullish") {
+			if sellPercentDifference < float64(3) { // || strings.Contains(analysis.Trend, "Bullish") {
 				opportunity.Action = ""
 			}
 		}
