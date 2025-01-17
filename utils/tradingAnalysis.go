@@ -61,7 +61,7 @@ type Summary struct {
 // analyzeTrend identifies the trend based on SMA and price action.
 func analyzeTrend(data MarketData, period int) trendAnalysis {
 
-	if len(data.Close) <= 0 {
+	if len(data.Close) <= 2 {
 		return trendAnalysis{}
 	}
 
