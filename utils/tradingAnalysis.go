@@ -502,7 +502,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	chartPattern := ""
 	candlePattern := ""
 
-	if len(data.Close) >= period20 {
+	if len(data.Close) >= period20 && len(data.Close) > 3 {
 		candleArray := []Candle{}
 
 		lastClose := data.Close[len(data.Close)-period20:]
