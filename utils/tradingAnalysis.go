@@ -137,6 +137,14 @@ func CalculateSmoothedRSI(closePrices []float64, rsiPeriod int, smoothingPeriod 
 // calculateBollingerBands computes Bollinger Bands.
 func calculateBollingerBands(closePrices []float64, period int, stdDev float64) map[string]float64 {
 
+	if len(closePrices) < 2 {
+		return map[string]float64{
+			"upper":  0,
+			"middle": 0,
+			"lower":  0,
+		}
+	}
+
 	middle := talib.Sma(closePrices, period)            // Middle Band (SMA)
 	stdDevArray := talib.StdDev(closePrices, period, 1) // Standard Deviation
 
@@ -535,8 +543,12 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		}
 	}
 
+	var dataLow, dataHigh float64
 	var currentCandle, prevCandle Candle
 	if len(data.Close) > 1 {
+		dataLow = data.Low[len(data.Low)-1]
+		dataHigh = data.High[len(data.High)-1]
+
 		currentCandle.Close = data.Close[len(data.Close)-1]
 		currentCandle.High = data.High[len(data.High)-1]
 		currentCandle.Low = data.Low[len(data.Low)-1]
@@ -544,6 +556,8 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	}
 
 	if len(data.Close) > 2 {
+		dataLow = data.Low[len(data.Low)-2]
+		dataHigh = data.High[len(data.High)-2]
 		prevCandle.Close = data.Close[len(data.Close)-2]
 		prevCandle.High = data.High[len(data.High)-2]
 		prevCandle.Low = data.Low[len(data.Low)-2]
@@ -566,7 +580,7 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 		RSI:            smoothedRSI,
 		BollingerBands: bollingerbands,
 		RetracementLevels: calculateFibonacciRetracement(
-			data.High[len(data.High)-2],
-			data.Low[len(data.Low)-2],
+			dataHigh,
+			dataLow,
 		)}, nil
 }
