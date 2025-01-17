@@ -61,6 +61,10 @@ type Summary struct {
 // analyzeTrend identifies the trend based on SMA and price action.
 func analyzeTrend(data MarketData, period int) trendAnalysis {
 
+	if len(data.Close) <= 0 {
+		return trendAnalysis{}
+	}
+
 	// Calculate the Simple Moving Averages.
 	dataClose := data.Close[len(data.Close)-period:]
 
@@ -112,6 +116,10 @@ func CalculateSmoothedRSI(closePrices []float64, rsiPeriod int, smoothingPeriod 
 
 	if len(closePrices) <= rsiPeriod {
 		rsiPeriod = len(closePrices) - 1
+	}
+
+	if rsiPeriod < 1 {
+		return 0
 	}
 
 	// Calculate standard RSI
