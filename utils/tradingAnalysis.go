@@ -125,6 +125,10 @@ func CalculateSmoothedRSI(closePrices []float64, rsiPeriod int, smoothingPeriod 
 	// Calculate standard RSI
 	standardRSI := talib.Rsi(closePrices, rsiPeriod)
 
+	if len(standardRSI) < smoothingPeriod {
+		smoothingPeriod = len(standardRSI)
+	}
+
 	// Smooth the RSI using SMA
 	smoothedRSI := talib.Sma(standardRSI, smoothingPeriod)
 	return TruncateFloat(smoothedRSI[len(smoothedRSI)-1], 2)
