@@ -378,6 +378,9 @@ func detectChartPatterns(prices, highs, lows, opens []float64) string {
 }
 
 func OverallTrend(trend10, trend20, trend50, curPrice float64) string {
+	if trend10 == 0 {
+		return Neutral
+	}
 
 	if trend50 == 0 {
 		if trend10 >= trend20 && curPrice >= trend10 {
@@ -444,6 +447,11 @@ func TimeframeTrends(intervals map[string]Summary) string {
 			maxScore += multiplier
 		}
 	}
+
+	if maxScore == 0 {
+		return Neutral
+	}
+
 	//Strong Bullish:
 	minScoreStrongBullish := 0.7 * float64(maxScore)
 	if float64(totalScore) >= minScoreStrongBullish {
