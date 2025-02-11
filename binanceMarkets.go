@@ -349,6 +349,15 @@ func binanceMarketOHLCVStream() {
 		market.Close, _ = strconv.ParseFloat(wsResp.Data.Kline.Close, 64)
 		market.Volume, _ = strconv.ParseFloat(wsResp.Data.Kline.Volume, 64)
 		market.VolumeQuote, _ = strconv.ParseFloat(wsResp.Data.Kline.VolumeQuote, 64)
+
+		if market.Low < market.LowPrice {
+			market.LowPrice = market.Low
+		}
+
+		if market.High > market.HighPrice {
+			market.HighPrice = market.High
+		}
+
 		calculateBollingerBands(&market)
 
 		marketRSIPricesMutex.Lock()
