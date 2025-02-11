@@ -554,9 +554,6 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	var dataLow, dataHigh float64
 	var currentCandle, prevCandle Candle
 	if len(data.Close) > 1 {
-		dataLow = data.Low[len(data.Low)-1]
-		dataHigh = data.High[len(data.High)-1]
-
 		currentCandle.Close = data.Close[len(data.Close)-1]
 		currentCandle.High = data.High[len(data.High)-1]
 		currentCandle.Low = data.Low[len(data.Low)-1]
@@ -564,12 +561,15 @@ func TradingSummary(pair, timeframe string, data MarketData) (Summary, error) {
 	}
 
 	if len(data.Close) > 2 {
-		dataLow = data.Low[len(data.Low)-2]
-		dataHigh = data.High[len(data.High)-2]
 		prevCandle.Close = data.Close[len(data.Close)-2]
 		prevCandle.High = data.High[len(data.High)-2]
 		prevCandle.Low = data.Low[len(data.Low)-2]
 		prevCandle.Open = data.Open[len(data.Open)-2]
+	}
+
+	if analysis20.Support > 0 && analysis20.Resistance > 0 {
+		dataLow = analysis20.Support
+		dataHigh = analysis20.Resistance
 	}
 
 	trendName := OverallTrend(analysis10.Entry, analysis20.Entry, analysis50.Entry, currentCandle.Close)
