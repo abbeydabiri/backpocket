@@ -11,15 +11,20 @@ import (
 )
 
 var (
+	// "1m":  []string{"1m", "5m", "15m"},
+	// "5m":  []string{"5m", "15m", "30m"},
+	// "15m": []string{"15m", "30m", "1h"},
+	// "30m": []string{"30m", "1h", "4h"},
+	// "1h":  []string{"1h", "4h", "6h"},
+	// "4h":  []string{"4h", "6h", "12h"},
+	// "6h":  []string{"6h", "12h", "1d"},
+	// "12h": []string{"12h", "1d", "3d"},
 	TimeframeMaps = map[string][]string{
-		"1m":  []string{"1m", "5m", "15m"},
-		"5m":  []string{"5m", "15m", "30m"},
-		"15m": []string{"15m", "30m", "1h"},
-		"30m": []string{"30m", "1h", "4h"},
-		"1h":  []string{"1h", "4h", "6h"},
-		"4h":  []string{"4h", "6h", "12h"},
-		"6h":  []string{"6h", "12h", "1d"},
-		"12h": []string{"12h", "1d", "3d"},
+		// "1M": {"1M", "1w", "1d", "4h"},
+		// "1w": {"1w", "1d", "4h", "15m"},
+		"3d": {"3d", "12h", "1h", "5m"},
+		"1d": {"1d", "4h", "30m", "3m"},
+		"6h": {"6h", "1h", "15m", "1m"},
 	}
 )
 
@@ -49,7 +54,7 @@ func restHandlerOpportunity(httpRes http.ResponseWriter, httpReq *http.Request) 
 	}
 
 	if TimeframeMaps[timeframe] == nil {
-		timeframe = "1m"
+		timeframe = "1d"
 	}
 	intervals := strings.Join(TimeframeMaps[timeframe], ",")
 	analysis, err := retrieveMarketPairAnalysis(pair, exchange, limit, endTime, startTime, intervals)
@@ -155,7 +160,7 @@ type opportunityType struct {
 	Analysis   map[string]interface{}
 }
 
-func analyseOpportunity(analysis analysisType, timeframe string, price float64) (opportunity opportunityType) {
+func oldAnalyseOpportunity(analysis analysisType, timeframe string, price float64) (opportunity opportunityType) {
 	if analysis.Pair == "" || analysis.Exchange == "" {
 		return
 	}
@@ -316,4 +321,223 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	}
 
 	return
+}
+
+func analyseOpportunity(analysis analysisType, timeframe string, price float64) (opportunity opportunityType) {
+	if analysis.Pair == "" || analysis.Exchange == "" {
+		return
+	}
+
+	if len(TimeframeMaps[timeframe]) < 4 {
+		return
+	}
+
+	market := getMarket(analysis.Pair, analysis.Exchange)
+	if price == 0 {
+		price = market.Price
+	}
+
+	for _, interval := range analysis.Intervals {
+		interval.Candle.Close = price
+		interval.Trend = utils.OverallTrend(interval.SMA10.Entry,
+			interval.SMA20.Entry, interval.SMA50.Entry, interval.Candle.Close)
+	}
+
+	// log.Printf("\n\n---1m Candle----: %+v", analysis.Intervals["1m"].Pattern)
+
+	interval0 := analysis.Intervals[TimeframeMaps[timeframe][0]]
+	interval1 := analysis.Intervals[TimeframeMaps[timeframe][1]]
+	interval2 := analysis.Intervals[TimeframeMaps[timeframe][2]]
+	interval3 := analysis.Intervals[TimeframeMaps[timeframe][3]]
+
+	if price == 0 {
+		price = utils.TruncateFloat((interval3.Candle.Open+interval3.Candle.Close)/2, 8)
+	}
+	opportunity.Pair = analysis.Pair
+	opportunity.Exchange = analysis.Exchange
+	opportunity.Timeframe = timeframe
+	opportunity.Price = price
+
+	isCheckLong := checkIfLong(price, []utils.Summary{interval0, interval1, interval2, interval3})
+
+	//Check for Long // Buy Opportunity
+	if isCheckLong && strings.Contains(interval3.Pattern.Candle, "Bullish") {
+		opportunity.Action = "BUY"
+	}
+
+	// -- -- --
+
+	//Check for Short // Sell Opportunity
+	isCheckShort := checkIfShort(price, []utils.Summary{interval0, interval1, interval2, interval3})
+	if isCheckShort && strings.Contains(interval3.Pattern.Candle, "Bearish") {
+		opportunity.Action = "SELL"
+	}
+
+	switch opportunity.Action {
+	case "BUY":
+		opportunity.Stoploss = interval3.SMA20.Support
+		opportunity.Takeprofit = interval2.SMA10.Resistance
+	case "SELL":
+		opportunity.Stoploss = interval3.SMA20.Resistance
+		opportunity.Takeprofit = interval2.SMA10.Support
+	}
+
+	// opportunity.Analysis = map[string]interface{}{
+	// 	"Buy":  buyAnalysis,
+	// 	"Sell": sellAnalysis,
+	// }
+
+	if market.Closed == 1 {
+		opportunityMutex.Lock()
+		pairexchange := fmt.Sprintf("%s-%s", analysis.Pair, analysis.Exchange)
+		opportunityMap[pairexchange] = notifications{Title: "", Message: ""}
+		opportunityMutex.Unlock()
+	}
+
+	return
+}
+
+func checkIfLong(currentPrice float64, intervals []utils.Summary) bool {
+	checkLong := map[string]bool{
+		"rsi":    true,
+		"fib":    true,
+		"trend":  true,
+		"candle": true,
+	}
+
+	for index, summary := range intervals {
+		if summary.RSI == 0 {
+			checkLong["rsi"] = false
+			checkLong["fib"] = false
+			checkLong["trend"] = false
+			checkLong["candle"] = false
+			continue
+		}
+
+		switch index {
+		case 0:
+			if checkLong["trend"] {
+				checkLong["trend"] = summary.Trend != "Bearish"
+			}
+			if checkLong["rsi"] {
+				checkLong["rsi"] = summary.RSI < 80
+			}
+			if checkLong["fib"] {
+				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+		case 1:
+			if checkLong["trend"] {
+				checkLong["trend"] = summary.Trend != "Bearish"
+			}
+			if checkLong["rsi"] {
+				checkLong["rsi"] = summary.RSI < 70
+			}
+			if checkLong["fib"] {
+				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+
+		case 2:
+			if checkLong["candle"] {
+				checkLong["candle"] = currentPrice > summary.Candle.Open
+			}
+			if checkLong["trend"] {
+				checkLong["trend"] = summary.Trend != "Bearish"
+			}
+			if checkLong["rsi"] {
+				checkLong["rsi"] = summary.RSI < 70
+			}
+			if checkLong["fib"] {
+				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+
+		case 3:
+			if checkLong["candle"] {
+				checkLong["candle"] = currentPrice > summary.Candle.Open
+			}
+			if checkLong["trend"] {
+				checkLong["trend"] = summary.Trend != "Bearish"
+			}
+			if checkLong["rsi"] {
+				checkLong["rsi"] = summary.RSI < 70
+			}
+			if checkLong["fib"] {
+				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+		}
+	}
+
+	return checkLong["trend"] && checkLong["rsi"] && checkLong["fib"] && checkLong["candle"]
+}
+
+func checkIfShort(currentPrice float64, intervals []utils.Summary) bool {
+	checkShort := map[string]bool{
+		"rsi":    true,
+		"fib":    true,
+		"trend":  true,
+		"candle": true,
+	}
+
+	for index, summary := range intervals {
+		if summary.RSI == 0 {
+			checkShort["rsi"] = false
+			checkShort["fib"] = false
+			checkShort["trend"] = false
+			checkShort["candle"] = false
+			continue
+		}
+
+		switch index {
+		case 0:
+			if checkShort["trend"] {
+				checkShort["trend"] = summary.Trend != "Bullish"
+			}
+			if checkShort["rsi"] {
+				checkShort["rsi"] = summary.RSI > 20
+			}
+			if checkShort["fib"] {
+				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+
+		case 1:
+			if checkShort["trend"] {
+				checkShort["trend"] = summary.Trend != "Bullish"
+			}
+			if checkShort["rsi"] {
+				checkShort["rsi"] = summary.RSI > 30
+			}
+			if checkShort["fib"] {
+				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+
+		case 2:
+			if checkShort["candle"] {
+				checkShort["candle"] = currentPrice < summary.Candle.Open
+			}
+			if checkShort["trend"] {
+				checkShort["trend"] = summary.Trend != "Bullish"
+			}
+			if checkShort["rsi"] {
+				checkShort["rsi"] = summary.RSI > 30
+			}
+			if checkShort["fib"] {
+				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+
+		case 3:
+			if checkShort["candle"] {
+				checkShort["candle"] = currentPrice < summary.Candle.Open
+			}
+			if checkShort["trend"] {
+				checkShort["trend"] = summary.Trend != "Bullish"
+			}
+			if checkShort["rsi"] {
+				checkShort["rsi"] = summary.RSI > 30
+			}
+			if checkShort["fib"] {
+				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+		}
+	}
+
+	return checkShort["trend"] && checkShort["rsi"] && checkShort["fib"] && checkShort["candle"]
 }
