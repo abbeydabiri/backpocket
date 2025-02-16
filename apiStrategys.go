@@ -71,11 +71,11 @@ func apiStrategyStopLossTakeProfit() {
 		var oldOrderList []models.Order
 		var oldPriceList []float64
 
-		sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
-		buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
+		// sellPercentDifference := utils.TruncateFloat(((orderBookAsksBaseTotal-orderBookBidsBaseTotal)/orderBookAsksBaseTotal)*100, 3)
+		// buyPercentDifference := utils.TruncateFloat(((orderBookBidsBaseTotal-orderBookAsksBaseTotal)/orderBookBidsBaseTotal)*100, 3)
 
 		analysis := getAnalysis(orderbookPair, orderbookExchange)
-		opportunity := analyseOpportunity(analysis, "1d", 0)
+		opportunity := analyseOpportunity(analysis, "5m", 0)
 
 		if opportunity.Action != "" {
 			go func() {
@@ -130,17 +130,17 @@ func apiStrategyStopLossTakeProfit() {
 			}()
 		}
 
-		if opportunity.Action == "BUY" {
-			if buyPercentDifference < float64(3) { // || strings.Contains(analysis.Trend, "Bearish") {
-				opportunity.Action = ""
-			}
-		}
+		// if opportunity.Action == "BUY" {
+		// 	if buyPercentDifference < float64(3) { // || strings.Contains(analysis.Trend, "Bearish") {
+		// 		opportunity.Action = ""
+		// 	}
+		// }
 
-		if opportunity.Action == "SELL" {
-			if sellPercentDifference < float64(3) { // || strings.Contains(analysis.Trend, "Bullish") {
-				opportunity.Action = ""
-			}
-		}
+		// if opportunity.Action == "SELL" {
+		// 	if sellPercentDifference < float64(3) { // || strings.Contains(analysis.Trend, "Bullish") {
+		// 		opportunity.Action = ""
+		// 	}
+		// }
 
 		opportunityFound := opportunity.Action
 
