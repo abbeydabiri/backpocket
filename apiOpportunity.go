@@ -419,22 +419,12 @@ func checkIfLong(currentPrice float64, intervals []utils.Summary) bool {
 		}
 
 		switch index {
-		case 2:
-			if checkLong["pattern"] {
-				checkLong["pattern"] = strings.Contains(summary.Pattern.Chart, "Bullish")
-			}
-			if checkLong["rsi"] {
-				checkLong["rsi"] = summary.RSI < 55
-			}
-			if checkLong["support"] {
-				checkLong["support"] = summary.SMA10.Support == summary.SMA20.Support
-			}
 		case 3:
 			if checkLong["candle"] {
 				checkLong["candle"] = currentPrice > summary.Candle.Open
 			}
 			if checkLong["trend"] {
-				checkLong["trend"] = summary.Trend == "Bearish"
+				checkLong["trend"] = summary.Trend != "Bullish"
 			}
 			if checkLong["pattern"] {
 				checkLong["pattern"] = strings.Contains(summary.Pattern.Chart, "Bullish")
@@ -443,10 +433,10 @@ func checkIfLong(currentPrice float64, intervals []utils.Summary) bool {
 				checkLong["rsi"] = summary.RSI < 40
 			}
 			if checkLong["fib"] {
-				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.382"] && currentPrice > summary.RetracementLevels["0.786"]
+				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
 			}
 			if checkLong["support"] {
-				checkLong["support"] = summary.SMA10.Support == summary.SMA20.Support
+				checkLong["support"] = summary.SMA20.Support == summary.SMA50.Support
 			}
 		}
 	}
@@ -476,35 +466,24 @@ func checkIfShort(currentPrice float64, intervals []utils.Summary) bool {
 		}
 
 		switch index {
-		case 2:
-			if checkShort["pattern"] {
-				checkShort["pattern"] = strings.Contains(summary.Pattern.Chart, "Bullish")
-			}
-			if checkShort["rsi"] {
-				checkShort["rsi"] = summary.RSI > 45
-			}
-			if checkShort["resistance"] {
-				checkShort["resistance"] = summary.SMA10.Resistance == summary.SMA20.Resistance
-			}
-
 		case 3:
 			if checkShort["candle"] {
 				checkShort["candle"] = currentPrice < summary.Candle.Open
 			}
 			if checkShort["trend"] {
-				checkShort["trend"] = summary.Trend == "Bullish"
+				checkShort["trend"] = summary.Trend != "Bearish"
 			}
-			if checkShort["pattern"] || strings.Contains(summary.Pattern.Chart, "Bearish") {
-				checkShort["pattern"] = true
+			if checkShort["pattern"] {
+				checkShort["pattern"] = strings.Contains(summary.Pattern.Chart, "Bearish")
 			}
 			if checkShort["rsi"] {
 				checkShort["rsi"] = summary.RSI > 60
 			}
 			if checkShort["fib"] {
-				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.382"] && currentPrice > summary.RetracementLevels["0.786"]
+				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
 			}
 			if checkShort["resistance"] {
-				checkShort["resistance"] = summary.SMA10.Resistance == summary.SMA20.Resistance
+				checkShort["resistance"] = summary.SMA20.Resistance == summary.SMA50.Resistance
 			}
 		}
 	}
