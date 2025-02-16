@@ -45,7 +45,7 @@ func apiStrategyStopLossTakeProfit() {
 	for orderbook := range chanStoplossTakeProfit {
 
 		var orderbookBidPrice, orderbookAskPrice float64
-		var orderBookBidsBaseTotal, orderBookAsksBaseTotal float64
+		// var orderBookBidsBaseTotal, orderBookAsksBaseTotal float64
 
 		orderbookMutex.RLock()
 		orderbookPair := orderbook.Pair
@@ -56,8 +56,8 @@ func apiStrategyStopLossTakeProfit() {
 		if len(orderbook.Asks) > 3 {
 			orderbookAskPrice = orderbook.Asks[0].Price
 		}
-		orderBookBidsBaseTotal = orderbook.BidsBaseTotal
-		orderBookAsksBaseTotal = orderbook.AsksBaseTotal
+		// orderBookBidsBaseTotal = orderbook.BidsBaseTotal
+		// orderBookAsksBaseTotal = orderbook.AsksBaseTotal
 		orderbookMutex.RUnlock()
 
 		if orderbookBidPrice == 0 || orderbookAskPrice == 0 {
