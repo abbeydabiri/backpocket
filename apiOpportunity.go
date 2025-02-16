@@ -399,10 +399,12 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 func checkIfLong(currentPrice float64, intervals []utils.Summary) bool {
 	checkLong := map[string]bool{
-		"rsi":    true,
-		"fib":    true,
-		"trend":  true,
-		"candle": true,
+		"rsi":     true,
+		"fib":     true,
+		"trend":   true,
+		"candle":  true,
+		"pattern": true,
+		"support": true,
 	}
 
 	for index, summary := range intervals {
@@ -411,70 +413,55 @@ func checkIfLong(currentPrice float64, intervals []utils.Summary) bool {
 			checkLong["fib"] = false
 			checkLong["trend"] = false
 			checkLong["candle"] = false
+			checkLong["pattern"] = false
+			checkLong["support"] = false
 			continue
 		}
 
 		switch index {
-		case 0:
-			if checkLong["trend"] {
-				checkLong["trend"] = summary.Trend != "Bearish"
-			}
-			if checkLong["rsi"] {
-				checkLong["rsi"] = summary.RSI < 80
-			}
-			if checkLong["fib"] {
-				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
-			}
-		case 1:
-			if checkLong["trend"] {
-				checkLong["trend"] = summary.Trend != "Bearish"
-			}
-			if checkLong["rsi"] {
-				checkLong["rsi"] = summary.RSI < 70
-			}
-			if checkLong["fib"] {
-				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
-			}
-
 		case 2:
-			if checkLong["candle"] {
-				checkLong["candle"] = currentPrice > summary.Candle.Open
-			}
-			if checkLong["trend"] {
-				checkLong["trend"] = summary.Trend != "Bearish"
+			if checkLong["pattern"] {
+				checkLong["pattern"] = strings.Contains(summary.Pattern.Chart, "Bullish")
 			}
 			if checkLong["rsi"] {
-				checkLong["rsi"] = summary.RSI < 70
+				checkLong["rsi"] = summary.RSI < 55
 			}
-			if checkLong["fib"] {
-				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			if checkLong["support"] {
+				checkLong["support"] = summary.SMA10.Support == summary.SMA20.Support
 			}
-
 		case 3:
 			if checkLong["candle"] {
 				checkLong["candle"] = currentPrice > summary.Candle.Open
 			}
 			if checkLong["trend"] {
-				checkLong["trend"] = summary.Trend != "Bearish"
+				checkLong["trend"] = summary.Trend == "Bearish"
+			}
+			if checkLong["pattern"] {
+				checkLong["pattern"] = strings.Contains(summary.Pattern.Chart, "Bullish")
 			}
 			if checkLong["rsi"] {
-				checkLong["rsi"] = summary.RSI < 70
+				checkLong["rsi"] = summary.RSI < 40
 			}
 			if checkLong["fib"] {
-				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+				checkLong["fib"] = currentPrice < summary.RetracementLevels["0.382"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+			if checkLong["support"] {
+				checkLong["support"] = summary.SMA10.Support == summary.SMA20.Support
 			}
 		}
 	}
 
-	return checkLong["trend"] && checkLong["rsi"] && checkLong["fib"] && checkLong["candle"]
+	return checkLong["trend"] && checkLong["rsi"] && checkLong["fib"] && checkLong["candle"] && checkLong["pattern"] && checkLong["support"]
 }
 
 func checkIfShort(currentPrice float64, intervals []utils.Summary) bool {
 	checkShort := map[string]bool{
-		"rsi":    true,
-		"fib":    true,
-		"trend":  true,
-		"candle": true,
+		"rsi":        true,
+		"fib":        true,
+		"trend":      true,
+		"candle":     true,
+		"pattern":    true,
+		"resistance": true,
 	}
 
 	for index, summary := range intervals {
@@ -483,44 +470,21 @@ func checkIfShort(currentPrice float64, intervals []utils.Summary) bool {
 			checkShort["fib"] = false
 			checkShort["trend"] = false
 			checkShort["candle"] = false
+			checkShort["pattern"] = false
+			checkShort["resistance"] = false
 			continue
 		}
 
 		switch index {
-		case 0:
-			if checkShort["trend"] {
-				checkShort["trend"] = summary.Trend != "Bullish"
-			}
-			if checkShort["rsi"] {
-				checkShort["rsi"] = summary.RSI > 20
-			}
-			if checkShort["fib"] {
-				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
-			}
-
-		case 1:
-			if checkShort["trend"] {
-				checkShort["trend"] = summary.Trend != "Bullish"
-			}
-			if checkShort["rsi"] {
-				checkShort["rsi"] = summary.RSI > 30
-			}
-			if checkShort["fib"] {
-				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
-			}
-
 		case 2:
-			if checkShort["candle"] {
-				checkShort["candle"] = currentPrice < summary.Candle.Open
-			}
-			if checkShort["trend"] {
-				checkShort["trend"] = summary.Trend != "Bullish"
+			if checkShort["pattern"] {
+				checkShort["pattern"] = strings.Contains(summary.Pattern.Chart, "Bullish")
 			}
 			if checkShort["rsi"] {
-				checkShort["rsi"] = summary.RSI > 30
+				checkShort["rsi"] = summary.RSI > 45
 			}
-			if checkShort["fib"] {
-				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+			if checkShort["resistance"] {
+				checkShort["resistance"] = summary.SMA10.Resistance == summary.SMA20.Resistance
 			}
 
 		case 3:
@@ -528,16 +492,22 @@ func checkIfShort(currentPrice float64, intervals []utils.Summary) bool {
 				checkShort["candle"] = currentPrice < summary.Candle.Open
 			}
 			if checkShort["trend"] {
-				checkShort["trend"] = summary.Trend != "Bullish"
+				checkShort["trend"] = summary.Trend == "Bullish"
+			}
+			if checkShort["pattern"] || strings.Contains(summary.Pattern.Chart, "Bearish") {
+				checkShort["pattern"] = true
 			}
 			if checkShort["rsi"] {
-				checkShort["rsi"] = summary.RSI > 30
+				checkShort["rsi"] = summary.RSI > 60
 			}
 			if checkShort["fib"] {
-				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.236"] && currentPrice > summary.RetracementLevels["0.786"]
+				checkShort["fib"] = currentPrice < summary.RetracementLevels["0.382"] && currentPrice > summary.RetracementLevels["0.786"]
+			}
+			if checkShort["resistance"] {
+				checkShort["resistance"] = summary.SMA10.Resistance == summary.SMA20.Resistance
 			}
 		}
 	}
 
-	return checkShort["trend"] && checkShort["rsi"] && checkShort["fib"] && checkShort["candle"]
+	return checkShort["trend"] && checkShort["rsi"] && checkShort["fib"] && checkShort["candle"] && checkShort["pattern"] && checkShort["resistance"]
 }
