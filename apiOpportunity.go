@@ -21,17 +21,17 @@ var (
 	// "12h": []string{"12h", "1d", "3d"},
 
 	TimeframeMaps = map[string][]string{
-		"1d":  []string{"1d", "1M"},
-		"12h": []string{"12h", "1w"},
-		"6h":  []string{"6h", "3d"},
-		"4h":  []string{"4h", "1d"},
-		// "2h":  []string{"2h", "1d"},
-		"1h":  []string{"1h", "12h"},
-		"30m": []string{"30m", "6h"},
-		"15m": []string{"15m", "4h"},
-		"5m":  []string{"5m", "1h"},
-		"3m":  []string{"3m", "30m"},
-		"1m":  []string{"1m", "15m"},
+		"1d":  {"1d", "1M"},
+		"12h": {"12h", "1w"},
+		"6h":  {"6h", "3d"},
+		"4h":  {"4h", "1d"},
+		// "2h":  {"2h", "1d"},
+		"1h":  {"1h", "12h"},
+		"30m": {"30m", "6h"},
+		"15m": {"15m", "4h"},
+		"5m":  {"5m", "1h"},
+		"3m":  {"3m", "30m"},
+		"1m":  {"1m", "15m"},
 	}
 )
 
@@ -219,11 +219,11 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	switch opportunity.Action {
 	case "BUY":
-		opportunity.Stoploss = upperInterval.SMA20.Support
-		opportunity.Takeprofit = lowerInterval.SMA50.Resistance
+		opportunity.Stoploss = utils.TruncateFloat(price*0.98, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(price*1.05, 8)
 	case "SELL":
-		opportunity.Stoploss = upperInterval.SMA20.Resistance
-		opportunity.Takeprofit = lowerInterval.SMA50.Support
+		opportunity.Stoploss = utils.TruncateFloat(price*1.02, 8)
+		opportunity.Takeprofit = utils.TruncateFloat(price*0.95, 8)
 	}
 
 	// opportunity.Analysis = map[string]interface{}{
@@ -258,10 +258,10 @@ func checkIfLong(currentPrice float64, summaryLower, summaryUpper utils.Summary)
 		checkLong["fib"] = currentPrice < summaryUpper.RetracementLevels["0.786"]
 	}
 	if checkLong["bollinger"] {
-		checkLong["bollinger"] = currentPrice < summaryUpper.BollingerBands["middle"]
+		checkLong["bollinger"] = currentPrice < summaryUpper.BollingerBands["lower"]
 	}
 	if checkLong["trend"] {
-		checkLong["trend"] = summaryUpper.Trend != "Bullish"
+		checkLong["trend"] = summaryUpper.Trend == "Bearish"
 	}
 
 	if checkLong["fib"] {
@@ -300,10 +300,10 @@ func checkIfShort(currentPrice float64, summaryLower, summaryUpper utils.Summary
 		checkShort["fib"] = currentPrice > summaryUpper.RetracementLevels["0.236"]
 	}
 	if checkShort["bollinger"] {
-		checkShort["bollinger"] = currentPrice > summaryUpper.BollingerBands["middle"]
+		checkShort["bollinger"] = currentPrice > summaryUpper.BollingerBands["upper"]
 	}
 	if checkShort["trend"] {
-		checkShort["trend"] = summaryUpper.Trend != "Bearish"
+		checkShort["trend"] = summaryUpper.Trend == "Bullish"
 	}
 
 	if checkShort["fib"] {
