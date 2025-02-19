@@ -303,7 +303,7 @@ func checkIfShort(currentPrice float64, summaryLower, summaryUpper utils.Summary
 		checkShort["bollinger"] = currentPrice > summaryUpper.BollingerBands["upper"]
 	}
 	if checkShort["trend"] {
-		checkShort["trend"] = summaryUpper.Trend == "Bearish"
+		checkShort["trend"] = summaryUpper.Trend == "Bullish"
 	}
 
 	if checkShort["fib"] {
