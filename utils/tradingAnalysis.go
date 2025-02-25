@@ -431,8 +431,10 @@ func TimeframeTrends(intervals map[string]Summary) string {
 	maxScore := 0
 	totalScore := 0
 	timeWeights := map[string]int{
-		"1m": 5, "3m": 5, "5m": 10, "15m": 15, "30m": 20, "1h": 25, "4h": 30, "6h": 35, "12h": 40, "1d": 45, "3d": 50,
+		"1m": 5, "5m": 10, "15m": 15, "1h": 25, "4h": 30, "1d": 45, "3d": 50, "1w": 55, "1M": 60,
 	}
+	// "1m": 5, "3m": 5, "5m": 10, "15m": 15, "30m": 20, "1h": 25, "4h": 30, "6h": 35, "12h": 40, "1d": 45, "3d": 50,
+
 	for timeframe, interval := range intervals {
 		multiplier := timeWeights[timeframe]
 		trendName = OverallTrend(interval.SMA10.Entry, interval.SMA20.Entry, interval.SMA50.Entry, interval.Candle.Close)
