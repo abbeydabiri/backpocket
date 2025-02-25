@@ -21,17 +21,16 @@ var (
 	// "12h": []string{"12h", "1d", "3d"},
 
 	TimeframeMaps = map[string][]string{
-		"1d":  {"1d", "1M"},
-		"12h": {"12h", "1w"},
-		"6h":  {"6h", "3d"},
-		"4h":  {"4h", "1d"},
-		// "2h":  {"2h", "1d"},
-		"1h":  {"1h", "12h"},
-		"30m": {"30m", "6h"},
-		"15m": {"15m", "4h"},
-		"5m":  {"5m", "1h"},
-		"3m":  {"3m", "30m"},
-		"1m":  {"1m", "15m"},
+		"3d":  {"3d", "1w", "1M"},
+		"1d":  {"1d", "3d", "1w"},
+		"4h":  {"4h", "1d", "1w"},
+		"2h":  {"2h", "6h", "3d"},
+		"1h":  {"1h", "4h", "3d"},
+		"30m": {"30m", "2h", "1d"},
+		"15m": {"15m", "1h", "4h"},
+		"5m":  {"5m", "30m", "1h"},
+		"3m":  {"3m", "15m", "30m"},
+		"1m":  {"1m", "5m", "15m"},
 	}
 )
 
@@ -60,7 +59,7 @@ func restHandlerOpportunity(httpRes http.ResponseWriter, httpReq *http.Request) 
 		return
 	}
 
-	if len(TimeframeMaps[timeframe]) != 2 {
+	if len(TimeframeMaps[timeframe]) != 3 {
 		timeframe = "1m"
 	}
 
@@ -192,7 +191,8 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 
 	interval1m := analysis.Intervals["1m"]
 	lowerInterval := analysis.Intervals[TimeframeMaps[timeframe][0]]
-	upperInterval := analysis.Intervals[TimeframeMaps[timeframe][1]]
+	middleInterval := analysis.Intervals[TimeframeMaps[timeframe][1]]
+	upperInterval := analysis.Intervals[TimeframeMaps[timeframe][2]]
 
 	if price == 0 {
 		price = interval1m.Candle.Close
@@ -202,7 +202,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	opportunity.Timeframe = timeframe
 	opportunity.Price = price
 
-	isCheckLong := checkIfLong(price, lowerInterval, upperInterval)
+	isCheckLong := checkIfLong(price, lowerInterval, middleInterval, upperInterval)
 
 	//Check for Long // Buy Opportunity
 	if isCheckLong {
@@ -212,7 +212,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	// -- -- --
 
 	//Check for Short // Sell Opportunity
-	isCheckShort := checkIfShort(price, lowerInterval, upperInterval)
+	isCheckShort := checkIfShort(price, lowerInterval, middleInterval, upperInterval)
 	if isCheckShort {
 		opportunity.Action = "SELL"
 	}
@@ -241,49 +241,49 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 	return
 }
 
-func checkIfLong(currentPrice float64, summaryLower, summaryUpper utils.Summary) bool {
+func checkIfLong(currentPrice float64, summaryLower, summaryMiddle, summaryUpper utils.Summary) bool {
 	checkLong := map[string]bool{
 		"rsi":       true,
 		"fib":       true,
 		"trend":     true,
-		"bollinger": true,
 		"support":   true,
+		"bollinger": true,
 	}
 
-	if summaryLower.RSI == 0 || summaryUpper.RSI == 0 {
+	if summaryLower.RSI == 0 || summaryUpper.RSI == 0 || summaryMiddle.RSI == 0 {
 		return false
 	}
 
-	if checkLong["fib"] {
-		checkLong["fib"] = currentPrice < summaryUpper.RetracementLevels["0.786"]
-	}
-	if checkLong["bollinger"] {
-		checkLong["bollinger"] = currentPrice < summaryUpper.BollingerBands["lower"]
-	}
-	if checkLong["trend"] {
-		checkLong["trend"] = summaryUpper.Trend == "Bearish"
-	}
-
-	if checkLong["fib"] {
-		checkLong["fib"] = currentPrice < summaryLower.RetracementLevels["0.786"]
-	}
-	if checkLong["bollinger"] {
-		checkLong["bollinger"] = currentPrice < summaryLower.BollingerBands["lower"]
-	}
-	if checkLong["trend"] {
-		checkLong["trend"] = summaryLower.Trend == "Bearish"
-	}
 	if checkLong["rsi"] {
-		checkLong["rsi"] = summaryLower.RSI < 50
+		checkLong["rsi"] = summaryLower.RSI < 50 &&
+			summaryMiddle.RSI < 50 &&
+			summaryUpper.RSI < 50
+	}
+	if checkLong["fib"] {
+		checkLong["fib"] = currentPrice < summaryLower.RetracementLevels["0.786"] &&
+			currentPrice < summaryMiddle.RetracementLevels["0.786"] &&
+			currentPrice < summaryUpper.RetracementLevels["0.786"]
+	}
+	if checkLong["trend"] {
+		checkLong["trend"] = summaryLower.Trend == "Bearish" &&
+			summaryMiddle.Trend == "Bearish" &&
+			summaryUpper.Trend == "Bearish"
+	}
+	if checkLong["bollinger"] {
+		checkLong["bollinger"] = currentPrice < summaryLower.BollingerBands["lower"] &&
+			currentPrice < summaryMiddle.BollingerBands["lower"] &&
+			currentPrice < summaryUpper.BollingerBands["lower"]
 	}
 	if checkLong["support"] {
-		checkLong["support"] = summaryLower.SMA10.Support == summaryLower.SMA50.Support
+		checkLong["support"] = summaryLower.SMA10.Support == summaryLower.SMA50.Support &&
+			summaryMiddle.SMA10.Support == summaryMiddle.SMA50.Support &&
+			summaryUpper.SMA10.Support == summaryUpper.SMA50.Support
 	}
 
 	return checkLong["fib"] && checkLong["bollinger"] && checkLong["trend"] && checkLong["rsi"] && checkLong["support"]
 }
 
-func checkIfShort(currentPrice float64, summaryLower, summaryUpper utils.Summary) bool {
+func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUpper utils.Summary) bool {
 	checkShort := map[string]bool{
 		"rsi":        true,
 		"fib":        true,
@@ -296,30 +296,30 @@ func checkIfShort(currentPrice float64, summaryLower, summaryUpper utils.Summary
 		return false
 	}
 
-	if checkShort["fib"] {
-		checkShort["fib"] = currentPrice > summaryUpper.RetracementLevels["0.236"]
-	}
-	if checkShort["bollinger"] {
-		checkShort["bollinger"] = currentPrice > summaryUpper.BollingerBands["upper"]
-	}
-	if checkShort["trend"] {
-		checkShort["trend"] = summaryUpper.Trend == "Bullish"
-	}
-
-	if checkShort["fib"] {
-		checkShort["fib"] = currentPrice > summaryLower.RetracementLevels["0.236"]
-	}
-	if checkShort["bollinger"] {
-		checkShort["bollinger"] = currentPrice > summaryLower.BollingerBands["upper"]
-	}
-	if checkShort["trend"] {
-		checkShort["trend"] = summaryLower.Trend == "Bullish"
-	}
 	if checkShort["rsi"] {
-		checkShort["rsi"] = summaryLower.RSI > 50
+		checkShort["rsi"] = summaryLower.RSI > 50 &&
+			summaryMiddle.RSI > 50 &&
+			summaryUpper.RSI > 50
+	}
+	if checkShort["fib"] {
+		checkShort["fib"] = currentPrice > summaryLower.RetracementLevels["0.236"] &&
+			currentPrice > summaryMiddle.RetracementLevels["0.236"] &&
+			currentPrice > summaryUpper.RetracementLevels["0.236"]
+	}
+	if checkShort["trend"] {
+		checkShort["trend"] = summaryLower.Trend == "Bullish" &&
+			summaryMiddle.Trend == "Bullish" &&
+			summaryUpper.Trend == "Bullish"
+	}
+	if checkShort["bollinger"] {
+		checkShort["bollinger"] = currentPrice > summaryLower.BollingerBands["upper"] &&
+			currentPrice > summaryMiddle.BollingerBands["upper"] &&
+			currentPrice > summaryUpper.BollingerBands["upper"]
 	}
 	if checkShort["resistance"] {
-		checkShort["resistance"] = summaryLower.SMA10.Resistance == summaryLower.SMA50.Resistance
+		checkShort["resistance"] = summaryLower.SMA10.Resistance == summaryLower.SMA50.Resistance &&
+			summaryMiddle.SMA10.Resistance == summaryMiddle.SMA50.Resistance &&
+			summaryUpper.SMA10.Resistance == summaryUpper.SMA50.Resistance
 	}
 
 	return checkShort["fib"] && checkShort["bollinger"] && checkShort["trend"] && checkShort["rsi"] && checkShort["resistance"]
