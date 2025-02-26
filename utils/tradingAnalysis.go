@@ -175,75 +175,6 @@ func identifyCandlestickPattern(candles []Candle) string {
 	latest := candles[len(candles)-1]
 	penultimate := candles[len(candles)-2]
 
-	// - four candle stick patterns - //
-	// Bearish Concealing Baby Swallow
-	if isBearishConcealingBabySwallow(candles[len(candles)-4:]) {
-		return "Bearish: Concealing Baby"
-	}
-
-	//Bearish Three Line Strike
-	if isBearishThreeLineStrike(candles[len(candles)-4:]) {
-		return "Bearish: Three Line Strike"
-	}
-
-	//Bullish Three Line Strike
-	if isBullishThreeLineStrike(candles[len(candles)-4:]) {
-		return "Bullish: Three Line Strike"
-	}
-
-	// - three candle stick patterns - //
-	// Bullish Deliberation (Variation of Three White Soldiers)
-	if isBullishDeliberation(candles[len(candles)-3:]) {
-		return "Bullish: Deliberation"
-	}
-
-	// Bullish Three White Soldiers
-	if isBullishThreeWhiteSoldiers(candles[len(candles)-3:]) {
-		return "Bullish: Three White Soldiers"
-	}
-
-	// Bearish Three Black Crows
-	if isBearishThreeBlackCrows(candles[len(candles)-3:]) {
-		return "Bearish: Three Black Crows"
-	}
-
-	// Bearish Identical Three Crows
-	if isBearishIdenticalThreeCrows(candles[len(candles)-3:]) {
-		return "Bearish: Identical Three Crows"
-	}
-
-	// Bearish Evening Star
-	if isBearishEveningStar(candles[len(candles)-3:]) {
-		return "Bearish: Evening Star"
-	}
-
-	// Bullish Morning Star
-	if isBullishMorningStar(candles[len(candles)-3:]) {
-		return "Bullish: Morning Star"
-	}
-
-	// - two candle stick patterns - //
-
-	// Bullish Engulfing
-	if isBullishEngulfing(penultimate, latest) {
-		return "Bullish: Engulfing"
-	}
-
-	// Bearish Engulfing
-	if isBearishEngulfing(penultimate, latest) {
-		return "Bearish: Engulfing"
-	}
-
-	//Bullish Tweezer Bottoms
-	if isBullishTweezerBottoms(penultimate, latest) {
-		return "Bullish: Tweezer Bottoms"
-	}
-
-	//Bearish Tweezer Tops
-	if isBearishTweezerTops(penultimate, latest) {
-		return "Bearish: Tweezer Tops"
-	}
-
 	// - one candle stick patterns - //
 	// Bullish Marubozu
 	if isBullishMarubozu(latest) {
@@ -308,6 +239,75 @@ func identifyCandlestickPattern(candles []Candle) string {
 	// Bearish Spinning Top
 	if isBearishSpinningTop(latest) {
 		return "Bearish: Spinning Top"
+	}
+
+	// - two candle stick patterns - //
+
+	// Bullish Engulfing
+	if isBullishEngulfing(penultimate, latest) {
+		return "Bullish: Engulfing"
+	}
+
+	// Bearish Engulfing
+	if isBearishEngulfing(penultimate, latest) {
+		return "Bearish: Engulfing"
+	}
+
+	//Bullish Tweezer Bottoms
+	if isBullishTweezerBottoms(penultimate, latest) {
+		return "Bullish: Tweezer Bottoms"
+	}
+
+	//Bearish Tweezer Tops
+	if isBearishTweezerTops(penultimate, latest) {
+		return "Bearish: Tweezer Tops"
+	}
+
+	// - three candle stick patterns - //
+	// Bullish Deliberation (Variation of Three White Soldiers)
+	if isBullishDeliberation(candles[len(candles)-3:]) {
+		return "Bullish: Deliberation"
+	}
+
+	// Bullish Three White Soldiers
+	if isBullishThreeWhiteSoldiers(candles[len(candles)-3:]) {
+		return "Bullish: Three White Soldiers"
+	}
+
+	// Bearish Three Black Crows
+	if isBearishThreeBlackCrows(candles[len(candles)-3:]) {
+		return "Bearish: Three Black Crows"
+	}
+
+	// Bearish Identical Three Crows
+	if isBearishIdenticalThreeCrows(candles[len(candles)-3:]) {
+		return "Bearish: Identical Three Crows"
+	}
+
+	// Bearish Evening Star
+	if isBearishEveningStar(candles[len(candles)-3:]) {
+		return "Bearish: Evening Star"
+	}
+
+	// Bullish Morning Star
+	if isBullishMorningStar(candles[len(candles)-3:]) {
+		return "Bullish: Morning Star"
+	}
+
+	// - four candle stick patterns - //
+	// Bearish Concealing Baby Swallow
+	if isBearishConcealingBabySwallow(candles[len(candles)-4:]) {
+		return "Bearish: Concealing Baby"
+	}
+
+	//Bearish Three Line Strike
+	if isBearishThreeLineStrike(candles[len(candles)-4:]) {
+		return "Bearish: Three Line Strike"
+	}
+
+	//Bullish Three Line Strike
+	if isBullishThreeLineStrike(candles[len(candles)-4:]) {
+		return "Bullish: Three Line Strike"
 	}
 
 	return "?"
