@@ -172,7 +172,7 @@ func analyseOpportunity(analysis analysisType, timeframe string, price float64) 
 		return
 	}
 
-	if len(TimeframeMaps[timeframe]) != 2 {
+	if len(TimeframeMaps[timeframe]) != 3 {
 		return
 	}
 
