@@ -246,6 +246,7 @@ func checkIfLong(currentPrice float64, summaryLower, summaryMiddle, summaryUpper
 		"rsi":       true,
 		"fib":       true,
 		"trend":     true,
+		"candle":    true,
 		"support":   true,
 		"bollinger": true,
 	}
@@ -269,6 +270,10 @@ func checkIfLong(currentPrice float64, summaryLower, summaryMiddle, summaryUpper
 			summaryMiddle.Trend == "Bearish" &&
 			summaryUpper.Trend == "Bearish"
 	}
+	if checkLong["candle"] {
+		checkLong["candle"] = currentPrice > summaryLower.Candle.Open &&
+			currentPrice > summaryMiddle.Candle.Open
+	}
 	if checkLong["bollinger"] {
 		checkLong["bollinger"] = currentPrice < summaryLower.BollingerBands["lower"] &&
 			currentPrice < summaryMiddle.BollingerBands["lower"] &&
@@ -280,7 +285,7 @@ func checkIfLong(currentPrice float64, summaryLower, summaryMiddle, summaryUpper
 			summaryUpper.SMA10.Support == summaryUpper.SMA50.Support
 	}
 
-	return checkLong["fib"] && checkLong["bollinger"] && checkLong["trend"] && checkLong["rsi"] && checkLong["support"]
+	return checkLong["candle"] && checkLong["fib"] && checkLong["bollinger"] && checkLong["trend"] && checkLong["rsi"] && checkLong["support"]
 }
 
 func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUpper utils.Summary) bool {
@@ -288,6 +293,7 @@ func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUppe
 		"rsi":        true,
 		"fib":        true,
 		"trend":      true,
+		"candle":     true,
 		"bollinger":  true,
 		"resistance": true,
 	}
@@ -311,6 +317,10 @@ func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUppe
 			summaryMiddle.Trend == "Bullish" &&
 			summaryUpper.Trend == "Bullish"
 	}
+	if checkShort["candle"] {
+		checkShort["candle"] = currentPrice < summaryLower.Candle.Open &&
+			currentPrice < summaryMiddle.Candle.Open
+	}
 	if checkShort["bollinger"] {
 		checkShort["bollinger"] = currentPrice > summaryLower.BollingerBands["upper"] &&
 			currentPrice > summaryMiddle.BollingerBands["upper"] &&
@@ -322,5 +332,5 @@ func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUppe
 			summaryUpper.SMA10.Resistance == summaryUpper.SMA50.Resistance
 	}
 
-	return checkShort["fib"] && checkShort["bollinger"] && checkShort["trend"] && checkShort["rsi"] && checkShort["resistance"]
+	return checkShort["candle"] && checkShort["fib"] && checkShort["bollinger"] && checkShort["trend"] && checkShort["rsi"] && checkShort["resistance"]
 }
