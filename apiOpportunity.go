@@ -246,7 +246,6 @@ func checkIfLong(currentPrice float64, summaryLower, summaryMiddle, summaryUpper
 		"rsi":       true,
 		"fib":       true,
 		"trend":     true,
-		"candle":    true,
 		"support":   true,
 		"bollinger": true,
 	}
@@ -270,22 +269,16 @@ func checkIfLong(currentPrice float64, summaryLower, summaryMiddle, summaryUpper
 			summaryMiddle.Trend == "Bearish" &&
 			summaryUpper.Trend == "Bearish"
 	}
-	if checkLong["candle"] {
-		checkLong["candle"] = currentPrice > summaryLower.Candle.Open &&
-			currentPrice > summaryMiddle.Candle.Open
-	}
+
 	if checkLong["bollinger"] {
-		checkLong["bollinger"] = currentPrice < summaryLower.BollingerBands["lower"] &&
-			currentPrice < summaryMiddle.BollingerBands["lower"] &&
-			currentPrice < summaryUpper.BollingerBands["lower"]
-	}
-	if checkLong["support"] {
-		checkLong["support"] = summaryLower.SMA10.Support == summaryLower.SMA50.Support &&
-			summaryMiddle.SMA10.Support == summaryMiddle.SMA50.Support &&
-			summaryUpper.SMA10.Support == summaryUpper.SMA50.Support
+		checkLong["bollinger"] = summaryLower.Candle.Low < summaryLower.BollingerBands["lower"]
 	}
 
-	return checkLong["candle"] && checkLong["fib"] && checkLong["bollinger"] && checkLong["trend"] && checkLong["rsi"] && checkLong["support"]
+	checkLong["support"] =
+		summaryLower.SMA50.Support == summaryMiddle.SMA50.Support &&
+			summaryLower.SMA50.Support == summaryUpper.SMA50.Support
+
+	return checkLong["fib"] && checkLong["bollinger"] && checkLong["trend"] && checkLong["rsi"] && checkLong["support"]
 }
 
 func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUpper utils.Summary) bool {
@@ -293,12 +286,11 @@ func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUppe
 		"rsi":        true,
 		"fib":        true,
 		"trend":      true,
-		"candle":     true,
 		"bollinger":  true,
 		"resistance": true,
 	}
 
-	if summaryLower.RSI == 0 || summaryUpper.RSI == 0 {
+	if summaryLower.RSI == 0 || summaryUpper.RSI == 0 || summaryMiddle.RSI == 0 {
 		return false
 	}
 
@@ -317,20 +309,14 @@ func checkIfShort(currentPrice float64, summaryLower, summaryMiddle, summaryUppe
 			summaryMiddle.Trend == "Bullish" &&
 			summaryUpper.Trend == "Bullish"
 	}
-	if checkShort["candle"] {
-		checkShort["candle"] = currentPrice < summaryLower.Candle.Open &&
-			currentPrice < summaryMiddle.Candle.Open
-	}
+
 	if checkShort["bollinger"] {
-		checkShort["bollinger"] = currentPrice > summaryLower.BollingerBands["upper"] &&
-			currentPrice > summaryMiddle.BollingerBands["upper"] &&
-			currentPrice > summaryUpper.BollingerBands["upper"]
-	}
-	if checkShort["resistance"] {
-		checkShort["resistance"] = summaryLower.SMA10.Resistance == summaryLower.SMA50.Resistance &&
-			summaryMiddle.SMA10.Resistance == summaryMiddle.SMA50.Resistance &&
-			summaryUpper.SMA10.Resistance == summaryUpper.SMA50.Resistance
+		checkShort["bollinger"] = summaryLower.Candle.High > summaryLower.BollingerBands["upper"]
 	}
 
-	return checkShort["candle"] && checkShort["fib"] && checkShort["bollinger"] && checkShort["trend"] && checkShort["rsi"] && checkShort["resistance"]
+	checkShort["resistance"] =
+		summaryLower.SMA50.Resistance == summaryMiddle.SMA50.Resistance &&
+			summaryLower.SMA50.Resistance == summaryUpper.SMA50.Resistance
+
+	return checkShort["fib"] && checkShort["bollinger"] && checkShort["trend"] && checkShort["rsi"] && checkShort["resistance"]
 }
